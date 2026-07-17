@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { AppInit } from '@/AppInit';
 import { BlankLayout } from '@/layouts/BlankLayout';
 import { CheckoutLayout } from '@/layouts/CheckoutLayout';
 import { RootLayout } from '@/layouts/RootLayout';
@@ -30,6 +31,7 @@ const OrderSuccessPage = lazy(() => import('@/pages/OrderSuccessPage').then((m) 
 const OrdersPage = lazy(() => import('@/pages/OrdersPage').then((m) => ({ default: m.OrdersPage })));
 const TrackingPage = lazy(() => import('@/pages/TrackingPage').then((m) => ({ default: m.TrackingPage })));
 const ProfilePage = lazy(() => import('@/pages/ProfilePage').then((m) => ({ default: m.ProfilePage })));
+const PolicyPage = lazy(() => import('@/pages/PolicyPage').then((m) => ({ default: m.PolicyPage })));
 const NotServiceablePage = lazy(() =>
   import('@/pages/NotServiceablePage').then((m) => ({ default: m.NotServiceablePage })),
 );
@@ -37,48 +39,51 @@ const NotServiceablePage = lazy(() =>
 export default function App() {
   return (
     <ErrorBoundary>
-      <BrowserRouter>
-        <Suspense fallback={<DotLoader />}>
-          <Routes>
-            {/* Blank — no app chrome */}
-            <Route element={<BlankLayout />}>
-              <Route path="/" element={<SplashPage />} />
-              <Route path="/location" element={<LocationPage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/payment-processing" element={<PaymentProcessingPage />} />
-              <Route path="/payment-failed" element={<PaymentFailedPage />} />
-              {/* alias kept so a stale /payment-failure link still resolves */}
-              <Route path="/payment-failure" element={<PaymentFailedPage />} />
-              <Route path="/not-serviceable" element={<NotServiceablePage />} />
-            </Route>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <AppInit>
+          <Suspense fallback={<DotLoader />}>
+            <Routes>
+              {/* Blank — no app chrome */}
+              <Route element={<BlankLayout />}>
+                <Route path="/" element={<SplashPage />} />
+                <Route path="/location" element={<LocationPage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/payment-processing" element={<PaymentProcessingPage />} />
+                <Route path="/payment-failed" element={<PaymentFailedPage />} />
+                {/* alias kept so a stale /payment-failure link still resolves */}
+                <Route path="/payment-failure" element={<PaymentFailedPage />} />
+                <Route path="/not-serviceable" element={<NotServiceablePage />} />
+              </Route>
 
-            {/* Root — header + bottom nav + WhatsApp */}
-            <Route element={<RootLayout />}>
-              <Route path="/home" element={<HomePage />} />
-              <Route path="/category" element={<CategoryPage />} />
-              <Route path="/product/:id" element={<ProductPage />} />
-              <Route path="/cart" element={<CartPage />} />
-              <Route path="/coupon" element={<CouponPage />} />
-              <Route path="/my-orders" element={<OrdersPage />} />
-              <Route path="/tracking" element={<TrackingPage />} />
-              <Route path="/profile" element={<ProfilePage />} />
-            </Route>
+              {/* Root — header + bottom nav + WhatsApp */}
+              <Route element={<RootLayout />}>
+                <Route path="/home" element={<HomePage />} />
+                <Route path="/category" element={<CategoryPage />} />
+                <Route path="/product/:id" element={<ProductPage />} />
+                <Route path="/cart" element={<CartPage />} />
+                <Route path="/coupon" element={<CouponPage />} />
+                <Route path="/my-orders" element={<OrdersPage />} />
+                <Route path="/tracking/:uniqueOrderId" element={<TrackingPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/terms-conditions" element={<PolicyPage />} />
+                <Route path="/privacy-policy" element={<PolicyPage />} />
+                {/* the canonical "view this order" */}
+                <Route path="/view-order/:uniqueOrderId" element={<OrderSuccessPage />} />
+              </Route>
 
-            {/* Checkout — header in checkout mode, no search */}
-            <Route element={<CheckoutLayout />}>
-              <Route path="/address" element={<AddressPage />} />
-              <Route path="/payment" element={<PaymentPage />} />
-            </Route>
+              {/* Checkout — header in checkout mode, no search */}
+              <Route element={<CheckoutLayout />}>
+                <Route path="/address" element={<AddressPage />} />
+                <Route path="/payment" element={<PaymentPage />} />
+                {/* PayU's success URL is hardcoded on the backend — never move it */}
+                <Route path="/running-order/:uniqueOrderId" element={<OrderSuccessPage />} />
+                <Route path="/order-success/:uniqueOrderId" element={<OrderSuccessPage />} />
+              </Route>
 
-            {/* order-success.html renders with no header — only the WhatsApp FAB */}
-            <Route element={<BlankLayout />}>
-              <Route path="/order-success" element={<OrderSuccessPage />} />
-              <Route path="/view-order/:uniqueOrderId" element={<OrderSuccessPage />} />
-            </Route>
-
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Suspense>
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Suspense>
+        </AppInit>
       </BrowserRouter>
     </ErrorBoundary>
   );

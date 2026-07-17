@@ -1,38 +1,138 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, ShieldCheck } from 'lucide-react';
+import { ExternalLink, Lock, ShieldCheck } from 'lucide-react';
+import { startPayuCheckout, useCreatePayuOrder } from '@/api/mutations/usePayu';
+import { isPhonePeGateway, phonePeBridgeUrl } from '@/api/mutations/usePhonePe';
+import { useToast } from '@/hooks/useToast';
+import { PENDING } from '@/utils/storageKeys';
 
-const STEPS = [
-  'Securely contacting your bank',
-  'Verifying payment details',
-  'Confirming with merchant',
-  'Almost done…',
-];
+const STEPS = ['Submitting your order', 'Initializing checkout', 'Opening secure gateway'];
 
-/* Ports payment-processing.html. The demo gateway resolves after 3s:
-   store-closed (10%) then payment (80% success).
-   TODO[part-2]: replace the simulated outcome with the real PayU return. */
+/* The bridge between /place-order and the gateway. The order already exists on
+   the backend by the time this mounts — this only hands the customer over.
+
+   PayU:    a signed form POST, straight to the host the backend hashed against.
+   PhonePe: opens the backend's own /phonepe/pay/{id} bridge, which redirects
+            from the onboarded domain — required, or PhonePe answers
+            INTERNAL_SECURITY_BLOCK_1. It's a tap-to-open card rather than an
+            automatic window.open, because a popup that isn't tied to a real tap
+            is what browsers block. */
 export function PaymentProcessingPage() {
   const navigate = useNavigate();
+  const push = useToast();
+  const createPayu = useCreatePayuOrder();
+
   const [step, setStep] = useState(0);
+  const [mode, setMode] = useState<'web' | 'webview' | null>(null);
+  const [phonePeUrl, setPhonePeUrl] = useState<string | null>(null);
+  const startedRef = useRef(false);
+
+  const orderId = sessionStorage.getItem(PENDING.orderId);
+  const uniqueOrderId = sessionStorage.getItem(PENDING.uniqueOrderId);
+  const method = sessionStorage.getItem(PENDING.method) ?? '';
 
   useEffect(() => {
-    const t = setInterval(() => setStep((i) => (i + 1) % STEPS.length), 800);
-    const done = setTimeout(() => {
-      clearInterval(t);
-      const storeClosed = Math.random() < 0.1;
-      if (storeClosed) {
-        navigate('/payment-failed?reason=store', { replace: true });
-        return;
+    if (!orderId) {
+      navigate('/home', { replace: true });
+      return;
+    }
+    // React 18 StrictMode double-invokes effects; a second handoff would open
+    // two gateway sessions for one order.
+    if (startedRef.current) return;
+    startedRef.current = true;
+
+    /* Whatever happens from here, the order is already placed — never strand
+       the customer on a dead screen. */
+    const orderIsSafe = () =>
+      navigate(uniqueOrderId ? `/view-order/${uniqueOrderId}` : '/my-orders', { replace: true });
+
+    // PhonePe: no API call — the bridge initiates the payment itself.
+    if (isPhonePeGateway(method)) {
+      setPhonePeUrl(phonePeBridgeUrl(Number(orderId)));
+      setStep(2);
+      return;
+    }
+
+    const run = async () => {
+      setStep(1);
+      try {
+        const handoff = await createPayu.mutateAsync(Number(orderId));
+        if (!handoff) {
+          push('The gateway could not be opened — your order is saved', 'err', 'x');
+          setTimeout(orderIsSafe, 1200);
+          return;
+        }
+        setStep(2);
+        setMode(startPayuCheckout(handoff));
+      } catch {
+        push('The gateway could not be opened — your order is saved', 'err', 'x');
+        setTimeout(orderIsSafe, 1200);
       }
-      const success = Math.random() < 0.8;
-      navigate(success ? '/order-success' : '/payment-failed?reason=payment', { replace: true });
-    }, 3000);
-    return () => {
-      clearInterval(t);
-      clearTimeout(done);
     };
-  }, [navigate]);
+    void run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /* The native shells settle payment themselves and post the result back — the
+     browser path never fires this, it leaves the page entirely. */
+  useEffect(() => {
+    if (mode !== 'webview') return;
+
+    const onMessage = (e: MessageEvent) => {
+      let payload: unknown = e.data;
+      if (typeof payload === 'string') {
+        try {
+          payload = JSON.parse(payload);
+        } catch {
+          return;
+        }
+      }
+      const msg = payload as { type?: string; status?: string } | null;
+      if (msg?.type !== 'PAYMENT_RESULT') return;
+
+      if (msg.status === 'SUCCESS') {
+        navigate(`/view-order/${uniqueOrderId}`, { replace: true });
+      } else {
+        push('Payment was not completed', 'err', 'x');
+        navigate('/my-orders', { replace: true });
+      }
+    };
+
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, [mode, uniqueOrderId, navigate, push]);
+
+  // PhonePe: a tap-to-open card, so this page survives to be come back to.
+  if (phonePeUrl) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-6 bg-[var(--cream)]">
+        <div className="text-center max-w-sm">
+          <div className="w-20 h-20 rounded-2xl bg-[var(--leaf-100)] flex items-center justify-center mx-auto">
+            <ShieldCheck className="w-10 h-10 text-[var(--green-700)]" />
+          </div>
+          <h1 className="display text-xl font-extrabold mt-5">Your order is placed</h1>
+          <p className="text-sm text-[var(--ink-soft)] mt-2">
+            Complete the payment with PhonePe to confirm it.
+          </p>
+          <button
+            onClick={() => window.open(phonePeUrl, '_blank', 'noopener')}
+            className="btn btn-primary w-full mt-6 py-3.5 text-base"
+          >
+            Pay with PhonePe <ExternalLink className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => navigate(uniqueOrderId ? `/view-order/${uniqueOrderId}` : '/my-orders', { replace: true })}
+            className="btn btn-ghost w-full mt-3 py-3"
+          >
+            View my order
+          </button>
+          <p className="text-[11px] text-[var(--ink-soft)] mt-4">
+            Paid already? Your order updates on its own — open it any time from My Orders.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center px-6 bg-[var(--cream)]">

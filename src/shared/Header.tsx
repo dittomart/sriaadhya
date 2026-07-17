@@ -1,16 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ChevronDown, MapPin, Search, ShoppingCart, User } from 'lucide-react';
-import { BRAND } from '@/api/_seed';
+import { useAppStore } from '@/store/appStore';
 import { useAuthStore } from '@/store/authStore';
 import { useCartStore, selectCartCount } from '@/store/cartStore';
 import { useLocationStore } from '@/store/locationStore';
 
 type NavKey = 'home' | 'cat' | 'cart' | 'orders' | 'profile' | '';
 
-/** Port of app.js `renderHeader()`. `showCheckoutMode` drops the search box. */
+/** `showCheckoutMode` drops the search box — the checkout pages have nothing to
+    search and the room is better spent on the address. */
 export function Header({ active = '', showCheckoutMode = false }: { active?: NavKey; showCheckoutMode?: boolean }) {
   const navigate = useNavigate();
+  const brand = useAppStore((s) => s.brand);
   const user = useAuthStore((s) => s.user);
   const count = useCartStore(selectCartCount);
   const bump = useCartStore((s) => s.bump);
@@ -18,7 +20,7 @@ export function Header({ active = '', showCheckoutMode = false }: { active?: Nav
   const [q, setQ] = useState('');
   const cartRef = useRef<HTMLAnchorElement>(null);
 
-  // Replays app.js `bumpCartIcon()` — restart the pop animation on every add.
+  // Restart the pop animation on every add.
   useEffect(() => {
     const el = cartRef.current;
     if (!el || bump === 0) return;
@@ -27,8 +29,7 @@ export function Header({ active = '', showCheckoutMode = false }: { active?: Nav
     el.classList.add('anim-pop');
   }, [bump]);
 
-  const area = location?.area ?? 'Avinashi';
-  const loggedIn = !!user?.loggedIn;
+  const area = location?.area || 'Avinashi';
 
   const submitSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && q.trim()) navigate('/category?q=' + encodeURIComponent(q.trim()));
@@ -38,8 +39,12 @@ export function Header({ active = '', showCheckoutMode = false }: { active?: Nav
     <header className="site-header glass" style={{ borderBottom: '1px solid var(--line)' }}>
       <div className="max-w-7xl mx-auto px-3 md:px-4 lg:px-8">
         <div className="flex items-center gap-2 lg:gap-3 h-16">
-          <Link to="/home" className="flex items-center flex-none no-tap" title={BRAND.name}>
-            <img src="/images/logo.png" alt={BRAND.name} className="h-8 sm:h-10 w-auto object-contain" />
+          <Link to="/home" className="flex items-center flex-none no-tap" title={brand?.name ?? 'SRI AADHYA'}>
+            <img
+              src={brand?.logo || '/images/logo.png'}
+              alt={brand?.name ?? 'SRI AADHYA FROZENS'}
+              className="h-8 sm:h-10 w-auto object-contain"
+            />
           </Link>
 
           <Link to="/location" className="flex items-center gap-1 text-left ml-1 no-tap flex-none max-w-[140px]">
@@ -66,7 +71,6 @@ export function Header({ active = '', showCheckoutMode = false }: { active?: Nav
             </div>
           )}
 
-          {/* desktop top nav */}
           <nav className="topnav hidden lg:flex items-center gap-5 text-sm font-semibold text-[var(--ink-soft)] ml-2">
             <Link to="/home" className={active === 'home' ? 'text-[var(--green-700)]' : ''}>
               Home
@@ -80,7 +84,7 @@ export function Header({ active = '', showCheckoutMode = false }: { active?: Nav
           </nav>
 
           <Link
-            to={loggedIn ? '/profile' : '/login'}
+            to={user ? '/profile' : '/login'}
             className="ml-auto md:ml-1 w-10 h-10 rounded-xl bg-[var(--cream-2)] flex items-center justify-center flex-none no-tap"
             title="Profile"
           >

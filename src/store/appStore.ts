@@ -1,77 +1,55 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { STORAGE_PREFIX } from '@/utils/storageKeys';
-import type { Address, Bill, Order, PayMethod } from '@/types';
+import type { Brand, StoreLocation } from '@/types';
 
 export type FoodFilter = 'all' | 'veg' | 'non-veg' | 'other';
+export type OrderType = 'delivery' | 'takeaway';
 
 interface AppState {
-  orders: Order[];
-  activeOrder: Order | null;
-  favOrders: Order[];
-  addresses: Address[];
-  activeAddressId: string | null;
-  /** Bill snapshot handed from cart → payment → order-success. */
-  checkout: Bill | null;
-  payMethod: PayMethod;
+  brand: Brand | null;
+  storeLocation: StoreLocation | null;
+  orderType: OrderType;
   foodFilter: FoodFilter;
+  /** which saved address the checkout is quoting and shipping to */
+  activeAddressId: string | null;
 
-  placeOrder: (order: Order) => void;
-  setActiveOrder: (order: Order | null) => void;
-  updateOrderStatus: (id: string, status: Order['status']) => void;
-  saveFavOrder: (order: Order) => void;
-
-  addAddress: (address: Address) => void;
-  deleteAddress: (id: string) => void;
-  setActiveAddress: (id: string) => void;
-
-  setCheckout: (bill: Bill) => void;
-  setPayMethod: (m: PayMethod) => void;
+  setBrand: (b: Brand) => void;
+  setStoreLocation: (l: StoreLocation) => void;
+  setOrderType: (t: OrderType) => void;
   setFoodFilter: (f: FoodFilter) => void;
+  setActiveAddress: (id: string | null) => void;
 }
 
 export const useAppStore = create<AppState>()(
   persist(
     (set) => ({
-      orders: [],
-      activeOrder: null,
-      favOrders: [],
-      addresses: [],
-      activeAddressId: null,
-      checkout: null,
-      payMethod: 'upi',
+      brand: null,
+      storeLocation: null,
+      orderType: 'delivery',
       foodFilter: 'all',
+      activeAddressId: null,
 
-      placeOrder: (order) =>
-        set((s) => ({ orders: [order, ...s.orders], activeOrder: order })),
-      setActiveOrder: (order) => set({ activeOrder: order }),
-      updateOrderStatus: (id, status) =>
-        set((s) => ({
-          orders: s.orders.map((o) => (o.id === id ? { ...o, status } : o)),
-          activeOrder: s.activeOrder?.id === id ? { ...s.activeOrder, status } : s.activeOrder,
-        })),
-      saveFavOrder: (order) => set((s) => ({ favOrders: [order, ...s.favOrders] })),
-
-      addAddress: (address) =>
-        set((s) => ({ addresses: [...s.addresses, address], activeAddressId: address.id })),
-      deleteAddress: (id) =>
-        set((s) => ({
-          addresses: s.addresses.filter((a) => a.id !== id),
-          activeAddressId: s.activeAddressId === id ? null : s.activeAddressId,
-        })),
-      setActiveAddress: (id) => set({ activeAddressId: id }),
-
-      setCheckout: (bill) => set({ checkout: bill }),
-      setPayMethod: (m) => set({ payMethod: m }),
-      setFoodFilter: (f) => set({ foodFilter: f }),
+      setBrand: (brand) => set({ brand }),
+      setStoreLocation: (storeLocation) => set({ storeLocation }),
+      setOrderType: (orderType) => set({ orderType }),
+      setFoodFilter: (foodFilter) => set({ foodFilter }),
+      setActiveAddress: (activeAddressId) => set({ activeAddressId }),
     }),
     {
       name: `${STORAGE_PREFIX}app`,
-      version: 2,
+      version: 3,
       storage: createJSONStorage(() => localStorage),
+      /* storeLocation is deliberately NOT persisted. Its schedule and
+         force-open/closed override drive whether the store is orderable at all;
+         serving last session's snapshot would keep taking orders for a store the
+         admin closed minutes ago, until /brand-locations resolves. */
+      partialize: (s) => ({
+        brand: s.brand,
+        orderType: s.orderType,
+        foodFilter: s.foodFilter,
+        activeAddressId: s.activeAddressId,
+      }),
     },
   ),
 );
-
-export const selectActiveAddress = (s: AppState): Address | undefined =>
-  s.addresses.find((a) => a.id === s.activeAddressId);

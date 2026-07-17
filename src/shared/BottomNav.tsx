@@ -13,7 +13,7 @@ interface Tab {
 /** Port of app.js `renderBottomNav()`. */
 export function BottomNav() {
   const { pathname } = useLocation();
-  const loggedIn = !!useAuthStore((s) => s.user)?.loggedIn;
+  const loggedIn = !!useAuthStore((s) => s.user);
 
   const tabs: Tab[] = [
     { to: '/home', Icon: Home, label: 'Home', match: ['/home'] },

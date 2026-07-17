@@ -17,7 +17,8 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(_error: Error, _info: ErrorInfo): void {
-    // TODO[part-2]: forward to the error-reporting endpoint.
+    /* Nowhere to send this yet — the backend exposes no error-reporting
+       endpoint. The customer still gets a way out, which is what matters here. */
   }
 
   render() {

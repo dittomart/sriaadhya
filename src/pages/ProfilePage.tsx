@@ -2,76 +2,77 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   BadgeCheck,
+  ChevronDown,
   ChevronRight,
   Clock,
-  Heart,
-  Leaf,
+  HelpCircle,
   LogIn,
   LogOut,
   MapPin,
   MessageCircle,
   Navigation,
   Package,
-  RotateCcw,
-  Star,
+  Trash2,
   Wallet,
 } from 'lucide-react';
-import { BRAND } from '@/api/_seed';
+import { logoutFully, useDeleteAccount } from '@/api/mutations/useAuth';
+import { useGetBrandPolicies } from '@/api/queries/useInit';
+import { useGetOrders } from '@/api/queries/useOrders';
+import { useGetWallet } from '@/api/queries/useWallet';
+import { PolicyModal } from '@/shared/PolicyModal';
 import { StoreHoursModal } from '@/shared/StoreHoursModal';
 import { useAppStore } from '@/store/appStore';
 import { useAuthStore } from '@/store/authStore';
-import { useCartStore } from '@/store/cartStore';
 import { useToast } from '@/hooks/useToast';
 import { rupee } from '@/utils/fmt';
-import type { Order } from '@/types';
+import type { BrandPolicies } from '@/api/queries/useInit';
 
-/* Ports profile.html. */
+/** Terms and Privacy get their own rows — everything else lives under Help. */
+const TOP_LEVEL: Array<{ key: keyof BrandPolicies; label: string; to: string }> = [
+  { key: 'termsConditions', label: 'Terms & Conditions', to: '/terms-conditions' },
+  { key: 'privacyPolicy', label: 'Privacy Policy', to: '/privacy-policy' },
+];
+
+const HELP_LINKS: Array<{ key: keyof BrandPolicies; label: string }> = [
+  { key: 'aboutUs', label: 'About Us' },
+  { key: 'contactUs', label: 'Contact Us' },
+  { key: 'deliveryPolicy', label: 'Delivery Policy' },
+  { key: 'cancellationRefundPolicy', label: 'Cancellation & Refund' },
+  { key: 'returnPolicy', label: 'Return Policy' },
+  { key: 'deleteAccountPolicy', label: 'Account Deletion Policy' },
+  { key: 'sellerTerms', label: 'Seller Terms' },
+];
+
 export function ProfilePage() {
   const navigate = useNavigate();
   const push = useToast();
   const user = useAuthStore((s) => s.user);
-  const logout = useAuthStore((s) => s.logout);
-  const orders = useAppStore((s) => s.orders);
-  const favs = useAppStore((s) => s.favOrders);
-  const foodFilter = useAppStore((s) => s.foodFilter);
-  const setFoodFilter = useAppStore((s) => s.setFoodFilter);
-  const replaceCart = useCartStore((s) => s.replace);
+  const brand = useAppStore((s) => s.brand);
+  const store = useAppStore((s) => s.storeLocation);
+  const { data: policies } = useGetBrandPolicies();
+  const { data: wallet } = useGetWallet();
+  const { orders } = useGetOrders();
+  const deleteAccount = useDeleteAccount();
+
   const [hoursOpen, setHoursOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [policy, setPolicy] = useState<{ title: string; html: string } | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
-  const loggedIn = !!user?.loggedIn;
-  const vegOnly = foodFilter === 'veg';
+  const whatsapp = (brand?.whatsapp || store?.whatsapp || store?.phone || '').replace(/\D/g, '');
+  const helpItems = HELP_LINKS.filter(({ key }) => !!policies?.[key]);
 
-  const toggleVeg = () => {
-    const next = !vegOnly;
-    setFoodFilter(next ? 'veg' : 'all');
-    push(next ? 'Showing Veg only 🟢' : 'Showing all items', 'ok', 'leaf');
+  const onDelete = async () => {
+    await deleteAccount.mutateAsync();
+    setConfirmDelete(false);
+    push('Account deleted', '', 'trash-2');
+    navigate('/home');
   };
 
-  const reorderFav = (o: Order) => {
-    replaceCart(
-      o.items.map((it) => ({
-        key: it.id,
-        id: it.id,
-        name: it.name,
-        price: it.price,
-        img: it.img,
-        foodType: it.foodType,
-        qty: it.qty,
-        unit: it.unit,
-      })),
-    );
-    push('Cart filled', 'ok', 'rotate-ccw');
-    setTimeout(() => navigate('/cart'), 600);
-  };
-
-  const authAction = () => {
-    if (loggedIn) {
-      logout();
-      push('Logged out', '', 'log-out');
-      setTimeout(() => navigate('/login?next=/profile'), 600);
-    } else {
-      navigate('/login?next=/profile');
-    }
+  const onLogout = () => {
+    logoutFully();
+    push('Logged out', '', 'log-out');
+    setTimeout(() => navigate('/home'), 400);
   };
 
   return (
@@ -93,18 +94,20 @@ export function ProfilePage() {
               <div className="flex-1 min-w-0">
                 <div className="text-xl font-extrabold display truncate">{user?.name || 'Guest User'}</div>
                 <div className="text-sm text-white/85 truncate">{user?.phone || 'Not logged in'}</div>
-                <span className="inline-flex items-center gap-1 mt-2 text-[11px] font-bold bg-white/20 border border-white/25 px-2.5 py-1 rounded-full">
-                  <BadgeCheck className="w-3.5 h-3.5" /> SRIAADHYA Member
-                </span>
+                {user && (
+                  <span className="inline-flex items-center gap-1 mt-2 text-[11px] font-bold bg-white/20 border border-white/25 px-2.5 py-1 rounded-full">
+                    <BadgeCheck className="w-3.5 h-3.5" /> {brand?.name ?? 'SRIAADHYA'} Member
+                  </span>
+                )}
               </div>
             </div>
           </div>
 
           {/* ===== STATS (overlap) ===== */}
-          <div className="grid grid-cols-3 gap-3 -mt-6 relative z-10">
+          <div className="grid grid-cols-2 gap-3 -mt-6 relative z-10">
             <div className="card stat-card p-3.5 text-center rise d1">
               <Wallet className="ic w-6 h-6 text-[var(--green-700)] mx-auto" />
-              <div className="font-extrabold text-lg mt-1">₹250</div>
+              <div className="font-extrabold text-lg mt-1">{rupee(wallet?.balance ?? 0)}</div>
               <div className="text-[11px] text-[var(--ink-soft)]">Wallet</div>
             </div>
             <div className="card stat-card p-3.5 text-center rise d2">
@@ -112,75 +115,6 @@ export function ProfilePage() {
               <div className="font-extrabold text-lg mt-1">{orders.length}</div>
               <div className="text-[11px] text-[var(--ink-soft)]">Orders</div>
             </div>
-            <div className="card stat-card p-3.5 text-center rise d3">
-              <Heart className="ic w-6 h-6 text-[var(--coral)] mx-auto" />
-              <div className="font-extrabold text-lg mt-1">{favs.length}</div>
-              <div className="text-[11px] text-[var(--ink-soft)]">Saved</div>
-            </div>
-          </div>
-
-          {/* veg preference */}
-          <div className="card p-4 mt-5 flex items-center gap-3 rise d1">
-            <div className="w-10 h-10 rounded-xl bg-[var(--leaf-100)] flex items-center justify-center flex-none">
-              <Leaf className="w-5 h-5 text-[var(--green-700)]" />
-            </div>
-            <div className="flex-1">
-              <div className="font-bold text-sm">Show Veg only by default</div>
-              <div className="text-[11px] text-[var(--ink-soft)]">Auto-filters category pages</div>
-            </div>
-            <button
-              onClick={toggleVeg}
-              className={`w-12 h-7 rounded-full relative transition flex-none ${
-                vegOnly ? 'bg-[var(--green-600)]' : 'bg-[var(--line)]'
-              }`}
-            >
-              <span
-                className="absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-all"
-                style={{ left: vegOnly ? '1.5rem' : '0.25rem' }}
-              />
-            </button>
-          </div>
-
-          {/* favorite orders */}
-          <h3 className="display text-lg font-extrabold mt-6 mb-2 flex items-center gap-2 head-accent">
-            <Star className="w-5 h-5 text-[var(--mustard)]" /> Favorite Orders
-          </h3>
-          <div className="space-y-3">
-            {favs.length === 0 ? (
-              <div className="card p-5 text-center text-sm text-[var(--ink-soft)]">
-                No favorite orders yet. Save one from order confirmation for instant reorder.
-              </div>
-            ) : (
-              favs.map((o, i) => (
-                <div key={o.id + i} className="card p-4 flex items-center gap-3 rise">
-                  <div className="flex -space-x-3">
-                    {o.items.slice(0, 3).map((it) => (
-                      <img
-                        key={it.id}
-                        src={it.img}
-                        alt={it.name}
-                        className="w-10 h-10 rounded-full object-cover border-2 border-white"
-                      />
-                    ))}
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-bold text-sm">
-                      {o.items.length} items • {rupee(o.bill.total)}
-                    </div>
-                    <div className="text-[11px] text-[var(--ink-soft)]">
-                      {o.items
-                        .map((it) => it.name.split('(')[0])
-                        .slice(0, 2)
-                        .join(', ')}
-                      …
-                    </div>
-                  </div>
-                  <button onClick={() => reorderFav(o)} className="btn btn-primary px-3 py-2 text-sm">
-                    <RotateCcw className="w-4 h-4" />
-                  </button>
-                </div>
-              ))
-            )}
           </div>
 
           {/* menu */}
@@ -213,37 +147,113 @@ export function ProfilePage() {
               <span className="flex-1 font-semibold text-sm">Store Hours</span>
               <ChevronRight className="chev w-4 h-4 text-[var(--ink-soft)]" />
             </button>
-            <a
-              href={`https://wa.me/${BRAND.whatsapp}`}
-              target="_blank"
-              rel="noreferrer"
-              className="menu-row flex items-center gap-3 p-4"
-            >
-              <span className="w-9 h-9 rounded-xl bg-[#DCFCE7] flex items-center justify-center flex-none">
-                <MessageCircle className="w-5 h-5 text-[#16A34A]" />
-              </span>
-              <span className="flex-1 font-semibold text-sm">Help &amp; Support</span>
-              <ChevronRight className="chev w-4 h-4 text-[var(--ink-soft)]" />
-            </a>
+            {whatsapp && (
+              <a
+                href={`https://wa.me/${whatsapp}`}
+                target="_blank"
+                rel="noreferrer"
+                className="menu-row flex items-center gap-3 p-4"
+              >
+                <span className="w-9 h-9 rounded-xl bg-[#DCFCE7] flex items-center justify-center flex-none">
+                  <MessageCircle className="w-5 h-5 text-[#16A34A]" />
+                </span>
+                <span className="flex-1 font-semibold text-sm">Chat with us</span>
+                <ChevronRight className="chev w-4 h-4 text-[var(--ink-soft)]" />
+              </a>
+            )}
           </div>
 
-          <button onClick={authAction} className="btn btn-ghost w-full mt-5 py-3.5">
-            {loggedIn ? (
-              <>
+          {/* policies — each row appears only when the brand published that page */}
+          {(helpItems.length > 0 || TOP_LEVEL.some(({ key }) => !!policies?.[key])) && (
+            <div className="card mt-4 overflow-hidden divide-y divide-[var(--line)] rise d3">
+              {TOP_LEVEL.filter(({ key }) => !!policies?.[key]).map(({ key, label, to }) => (
+                <Link key={key} to={to} className="menu-row flex items-center gap-3 p-4">
+                  <span className="flex-1 font-semibold text-sm">{label}</span>
+                  <ChevronRight className="chev w-4 h-4 text-[var(--ink-soft)]" />
+                </Link>
+              ))}
+
+              {helpItems.length > 0 && (
+                <>
+                  <button
+                    onClick={() => setHelpOpen((v) => !v)}
+                    className="menu-row w-full flex items-center gap-3 p-4 text-left"
+                  >
+                    <span className="w-9 h-9 rounded-xl bg-[var(--leaf-100)] flex items-center justify-center flex-none">
+                      <HelpCircle className="w-5 h-5 text-[var(--green-700)]" />
+                    </span>
+                    <span className="flex-1 font-semibold text-sm">Help &amp; Info</span>
+                    <ChevronDown
+                      className={`w-4 h-4 text-[var(--ink-soft)] transition-transform ${helpOpen ? 'rotate-180' : ''}`}
+                    />
+                  </button>
+                  {helpOpen &&
+                    helpItems.map(({ key, label }) => (
+                      <button
+                        key={key}
+                        onClick={() => setPolicy({ title: label, html: policies?.[key] ?? '' })}
+                        className="menu-row w-full flex items-center gap-3 p-4 pl-16 text-left"
+                      >
+                        <span className="flex-1 font-semibold text-sm">{label}</span>
+                        <ChevronRight className="chev w-4 h-4 text-[var(--ink-soft)]" />
+                      </button>
+                    ))}
+                </>
+              )}
+            </div>
+          )}
+
+          {user ? (
+            <>
+              <button onClick={onLogout} className="btn btn-ghost w-full mt-5 py-3.5">
                 <LogOut className="w-4 h-4" /> Logout
-              </>
-            ) : (
-              <>
-                <LogIn className="w-4 h-4" /> Login / Sign up
-              </>
-            )}
-          </button>
+              </button>
+              <button
+                onClick={() => setConfirmDelete(true)}
+                className="w-full mt-3 py-3 text-sm font-bold text-[var(--coral)] flex items-center justify-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" /> Delete Account
+              </button>
+            </>
+          ) : (
+            <Link to="/login?next=/profile" className="btn btn-primary w-full mt-5 py-3.5">
+              <LogIn className="w-4 h-4" /> Login / Sign up
+            </Link>
+          )}
+
           <p className="text-center text-[11px] text-[var(--ink-soft)] mt-4">
             SRI AADHYA FROZENS • Freshness Frozen, Goodness Preserved
           </p>
         </div>
       </main>
+
       {hoursOpen && <StoreHoursModal onClose={() => setHoursOpen(false)} />}
+      {policy && <PolicyModal title={policy.title} html={policy.html} onClose={() => setPolicy(null)} />}
+
+      {confirmDelete && (
+        <div className="modal-back" onClick={(e) => e.target === e.currentTarget && setConfirmDelete(false)}>
+          <div className="modal-card p-5">
+            <h3 className="text-lg font-extrabold">Delete Account</h3>
+            <p className="text-sm text-[var(--ink-soft)] mt-3">Are you sure you want to delete your account?</p>
+            <p className="text-sm text-[var(--ink-soft)] mt-3">
+              Once you delete your account, you will lose all the details saved in {brand?.name ?? 'SRIAADHYA'}.
+            </p>
+            <div className="flex gap-2 mt-5">
+              <button onClick={() => setConfirmDelete(false)} className="btn btn-ghost flex-1 py-3">
+                No
+              </button>
+              <button
+                onClick={() => void onDelete()}
+                disabled={deleteAccount.isPending}
+                className={`btn flex-1 py-3 text-white ${deleteAccount.isPending ? 'opacity-60' : ''}`}
+                style={{ background: 'var(--coral)' }}
+              >
+                {deleteAccount.isPending ? 'Deleting…' : 'Yes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

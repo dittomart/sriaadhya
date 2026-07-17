@@ -1,0 +1,29 @@
+Options -MultiViews
+RewriteEngine On
+
+# Serve real files/directories as-is (assets, images, etc).
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Everything else is a client-side route → hand it to index.html in THIS folder.
+# Relative target (no leading slash) so it works whatever sub-path this sits at.
+#
+# This is what makes PayU's return work: the gateway sends the customer straight
+# to /running-order/{id} or /my-orders, and without this the host answers 404 —
+# the payment succeeded but the customer sees a dead page.
+RewriteRule ^ index.html [L]
+
+# Caching. index.html must NEVER be cached: it is the file that names the current
+# hashed bundles, so a stale copy asks the browser for JS that no longer exists.
+# The hashed assets under /assets/ are immutable by construction, so cache them hard.
+<IfModule mod_headers.c>
+  <FilesMatch "index\.html$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </FilesMatch>
+  <FilesMatch "\.(js|css|woff2?|jpg|jpeg|png|webp|svg)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+</IfModule>
