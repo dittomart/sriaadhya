@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no"/>
+<title>Set your location — SRI AADHYA FROZENS</title>
+<link rel="icon" type="image/png" href="assets/images/logo.png"/>
+<link rel="apple-touch-icon" sizes="180x180" href="assets/images/logo.png"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={theme:{extend:{screens:{xs:'420px'}}}}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/styles.css"/>
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="min-h-screen flex flex-col">
+  <!-- top decorative band -->
+  <div class="brand-grad-soft text-white px-6 pt-12 pb-20 relative overflow-hidden">
+    <div class="absolute -right-8 -top-8 text-[120px] opacity-10 leaf-sway">🌿</div>
+    <div class="absolute right-20 bottom-2 text-5xl opacity-20 float">🍃</div>
+    <div class="max-w-md mx-auto relative">
+      <div class="flex items-center gap-3 mb-8">
+        <div class="w-14 h-14 rounded-2xl bg-white flex items-center justify-center shadow-lg">
+          <img src="assets/images/logo.png" class="w-10 h-10 object-contain"/>
+        </div>
+        <div>
+          <div class="display text-2xl font-extrabold leading-none">SRI AADHYA <span style="color:var(--brand-light)">FROZENS</span></div>
+          <div class="text-[11px] text-white/80 font-bold uppercase tracking-widest">Freshness Frozen, Goodness Preserved</div>
+        </div>
+      </div>
+      <h1 class="display text-3xl font-extrabold leading-tight">Where should we<br/>deliver freshness?</h1>
+      <p class="text-white/80 text-sm mt-2 flex items-center gap-2"><i data-lucide="zap" class="w-4 h-4"></i> 30-min delivery in Avinashi & 10 km around</p>
+    </div>
+  </div>
+
+  <div class="max-w-md mx-auto w-full px-5 -mt-12 relative flex-1 pb-10">
+    <div class="card p-5 shadow-lg" style="animation:fadeUp .5s ease">
+      <!-- GPS -->
+      <button id="gpsBtn" onclick="detectGPS()" class="btn btn-primary w-full py-3.5 text-base">
+        <i data-lucide="navigation" class="w-5 h-5"></i> <span id="gpsLabel">Use my current location</span>
+      </button>
+      <p id="gpsHint" class="text-[11px] text-[var(--ink-soft)] text-center mt-2">We use this only to check delivery & navigate to you</p>
+
+      <div class="flex items-center gap-3 my-5">
+        <div class="flex-1 h-px bg-[var(--line)]"></div><span class="text-xs text-[var(--ink-soft)] font-semibold">OR</span><div class="flex-1 h-px bg-[var(--line)]"></div>
+      </div>
+
+      <!-- Search -->
+      <div class="relative">
+        <div class="flex items-center bg-[var(--cream)] border border-[var(--line)] rounded-xl px-3 h-12">
+          <i data-lucide="search" class="w-5 h-5 text-[var(--ink-soft)]"></i>
+          <input id="areaSearch" autocomplete="off" placeholder="Search your area…" class="flex-1 bg-transparent outline-none px-2 text-sm"/>
+        </div>
+        <div id="suggestions" class="absolute left-0 right-0 mt-1 bg-white border border-[var(--line)] rounded-xl shadow-lg z-10 overflow-hidden hidden"></div>
+      </div>
+
+      <!-- captured preview -->
+      <div id="captured" class="hidden mt-4 p-3 rounded-xl bg-[var(--leaf-100)] border border-[var(--green-500)]/30">
+        <div class="flex items-start gap-2">
+          <i data-lucide="map-pin" class="w-5 h-5 text-[var(--green-700)] mt-.5"></i>
+          <div class="flex-1">
+            <div id="capArea" class="font-bold text-sm"></div>
+            <div id="capCoord" class="text-[11px] text-[var(--ink-soft)] font-mono"></div>
+            <div id="capDist" class="text-[11px] font-semibold mt-1"></div>
+          </div>
+        </div>
+        <button id="confirmBtn" onclick="confirmLocation()" class="btn btn-primary w-full mt-3 py-3">Confirm & Continue <i data-lucide="arrow-right" class="w-4 h-4"></i></button>
+      </div>
+    </div>
+
+    <!-- trust strip -->
+    <div class="grid grid-cols-3 gap-2 mt-5 text-center">
+      <div class="card p-3"><i data-lucide="timer" class="w-5 h-5 text-[var(--green-700)] mx-auto"></i><div class="text-[11px] font-bold mt-1">30 min</div><div class="text-[10px] text-[var(--ink-soft)]">delivery</div></div>
+      <div class="card p-3"><i data-lucide="shield-check" class="w-5 h-5 text-[var(--green-700)] mx-auto"></i><div class="text-[11px] font-bold mt-1">Quality</div><div class="text-[10px] text-[var(--ink-soft)]">assured</div></div>
+      <div class="card p-3"><i data-lucide="leaf" class="w-5 h-5 text-[var(--green-700)] mx-auto"></i><div class="text-[11px] font-bold mt-1">Farm</div><div class="text-[10px] text-[var(--ink-soft)]">fresh</div></div>
+    </div>
+
+    <!-- optional login -->
+    <div class="text-center mt-6 text-sm">
+      <span class="text-[var(--ink-soft)]">Want faster checkout? </span>
+      <a href="login.html" class="font-bold text-[var(--green-700)]">Login / Sign up</a>
+      <span class="text-[var(--ink-soft)]"> (optional)</span>
+    </div>
+    <p class="text-center text-[11px] text-[var(--ink-soft)] mt-3 flex items-center justify-center gap-1"><i data-lucide="lock" class="w-3 h-3"></i> A serviceable location is required to browse — this is a hyperlocal store.</p>
+  </div>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+lucide.createIcons();
+
+// Mock geocode DB — areas around Avinashi, Tirupur
+const AREAS = [
+  {area:"Avinashi", pincode:"641654", lat:11.1925, lng:77.2680},
+  {area:"Avinashi Road, Tirupur", pincode:"641603", lat:11.1389, lng:77.3210},
+  {area:"Mangalam, Tirupur", pincode:"641663", lat:11.1602, lng:77.2475},
+  {area:"Palladam", pincode:"641664", lat:10.9920, lng:77.2870},
+  {area:"Tirupur Central", pincode:"641601", lat:11.1085, lng:77.3411},
+  {area:"Annur", pincode:"641653", lat:11.2330, lng:77.1050},
+  {area:"Somanur", pincode:"641668", lat:11.0700, lng:77.1730},
+  {area:"Coimbatore RS Puram", pincode:"641002", lat:11.0080, lng:76.9560}, // far -> not serviceable
+  {area:"Erode Town", pincode:"638001", lat:11.3410, lng:77.7172}, // far -> not serviceable
+];
+const STORE = {lat: SRI.BRAND.storeLat, lng: SRI.BRAND.storeLng};
+let pending = null;
+
+const sg = document.getElementById('suggestions');
+document.getElementById('areaSearch').addEventListener('input', (e)=>{
+  const q = e.target.value.trim().toLowerCase();
+  if(!q){ sg.classList.add('hidden'); return; }
+  const matches = AREAS.filter(a=>a.area.toLowerCase().includes(q)).slice(0,6);
+  if(!matches.length){ sg.innerHTML = `<div class="p-3 text-sm text-[var(--ink-soft)]">Address not found. Please use “Use my current location” instead.</div>`; sg.classList.remove('hidden'); return; }
+  sg.innerHTML = matches.map(a=>`<button onclick='pickArea(${JSON.stringify(a)})' class="w-full text-left px-3 py-2.5 hover:bg-[var(--cream)] flex items-center gap-2 border-b border-[var(--line)] last:border-0"><i data-lucide="map-pin" class="w-4 h-4 text-[var(--green-700)]"></i><span class="text-sm"><b>${a.area}</b><span class="block text-[11px] text-[var(--ink-soft)]">${a.pincode}</span></span></button>`).join('');
+  sg.classList.remove('hidden'); lucide.createIcons();
+});
+
+function pickArea(a){
+  sg.classList.add('hidden');
+  document.getElementById('areaSearch').value = a.area;
+  showCaptured(a.area, a.lat, a.lng, a.pincode);
+}
+
+function detectGPS(){
+  const btn=document.getElementById('gpsBtn'), lab=document.getElementById('gpsLabel');
+  lab.textContent='Detecting…'; btn.disabled=true;
+  btn.querySelector('i').classList.add('animate-spin');
+  const finish = (lat,lng,name)=>{ btn.querySelector('i').classList.remove('animate-spin'); btn.disabled=false; lab.textContent='Use my current location'; showCaptured(name,lat,lng,'641654'); };
+  if(!navigator.geolocation){ setTimeout(()=>finish(STORE.lat+0.01,STORE.lng+0.01,'Avinashi (detected)'),900); return; }
+  navigator.geolocation.getCurrentPosition(
+    (pos)=>finish(pos.coords.latitude,pos.coords.longitude,'Detected location'),
+    ()=>{ // permission denied -> graceful fallback near store (demo)
+      document.getElementById('gpsHint').innerHTML='<span class="text-[var(--coral)]">Couldn\'t access GPS. Search your area below instead.</span>';
+      finish(STORE.lat+0.012,STORE.lng+0.009,'Near Avinashi (sample)');
+    }, {timeout:8000});
+}
+
+function showCaptured(area,lat,lng,pincode){
+  const dist = distanceKm(STORE.lat,STORE.lng,lat,lng);
+  const serviceable = dist <= SRI.BRAND.radiusKm;
+  pending = {area, latitude:+lat.toFixed(5), longitude:+lng.toFixed(5), pincode, serviceable, distance_from_store_km:+dist.toFixed(1)};
+  document.getElementById('captured').classList.remove('hidden');
+  document.getElementById('capArea').textContent = area;
+  document.getElementById('capCoord').textContent = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+  const d = document.getElementById('capDist'), btn=document.getElementById('confirmBtn');
+  if(serviceable){ d.innerHTML = `<span class="text-[var(--green-700)] flex items-center gap-1"><i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> We deliver here • ${dist.toFixed(1)} km away</span>`; btn.disabled=false; btn.classList.remove('opacity-50'); }
+  else{ d.innerHTML = `<span class="text-[var(--coral)] flex items-center gap-1"><i data-lucide="x-circle" class="w-3.5 h-3.5"></i> ${dist.toFixed(1)} km — outside our 10 km zone</span>`; btn.disabled=false; }
+  lucide.createIcons();
+}
+
+function confirmLocation(){
+  if(!pending) return;
+  set(LS.loc, pending);
+  if(pending.serviceable) location.href='home.html';
+  else location.href='not-serviceable.html';
+}
+</script>
+</body>
+</html>

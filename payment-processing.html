@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Processing Payment — SRI AADHYA FROZENS</title>
+<link rel="icon" type="image/png" href="assets/images/logo.png"/>
+<link rel="apple-touch-icon" sizes="180x180" href="assets/images/logo.png"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={theme:{extend:{screens:{xs:'420px'}}}}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/styles.css"/>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>if(!JSON.parse(localStorage.getItem('dittomart_location')||'null')?.latitude)location.replace('login.html');</script>
+</head>
+<body class="min-h-screen flex items-center justify-center px-6 bg-[var(--cream)]">
+  <div class="text-center max-w-sm">
+    <div class="relative w-32 h-32 mx-auto">
+      <div class="splash-ring absolute inset-0"></div>
+      <div class="absolute inset-0 flex items-center justify-center"><i data-lucide="shield-check" class="w-12 h-12 text-[var(--green-700)]"></i></div>
+    </div>
+    <h1 class="display text-xl font-extrabold mt-6">Processing your payment…</h1>
+    <p class="text-sm text-[var(--ink-soft)] mt-2" id="step">Securely contacting your bank</p>
+    <div class="flex items-center justify-center gap-2 mt-5 text-[12px] text-[var(--ink-soft)]"><i data-lucide="lock" class="w-3.5 h-3.5"></i> Do not press back or refresh</div>
+  </div>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+lucide.createIcons();
+const steps=['Securely contacting your bank','Verifying payment details','Confirming with merchant','Almost done…'];
+let i=0; const t=setInterval(()=>{ i=(i+1)%steps.length; document.getElementById('step').textContent=steps[i]; },800);
+// store-closed (10%) then payment (80% success)
+setTimeout(()=>{
+  clearInterval(t);
+  const storeClosed = Math.random()<0.10;
+  if(storeClosed){ location.href='payment-failed.html?reason=store'; return; }
+  const success = Math.random()<0.80;
+  location.href = success ? 'order-success.html' : 'payment-failed.html?reason=payment';
+}, 3000);
+</script>
+</body>
+</html>

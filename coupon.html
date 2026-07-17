@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Offers & Coupons — SRI AADHYA FROZENS</title>
+<link rel="icon" type="image/png" href="assets/images/logo.png"/>
+<link rel="apple-touch-icon" sizes="180x180" href="assets/images/logo.png"/>
+<link rel="shortcut icon" type="image/x-icon" href="assets/images/logo.png"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={theme:{extend:{screens:{xs:'420px'}}}}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/styles.css"/>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>if(!JSON.parse(localStorage.getItem('dittomart_location')||'null')?.latitude)location.replace('login.html');</script>
+</head>
+<body>
+<div id="app-header"></div>
+<main class="pt-16 pb-24 lg:pb-10">
+  <div class="max-w-2xl mx-auto px-4 lg:px-8 mt-4">
+    <a href="cart.html" class="text-sm font-bold text-[var(--green-700)] flex items-center gap-1 mb-3"><i data-lucide="arrow-left" class="w-4 h-4"></i> Back to cart</a>
+    <h1 class="display text-2xl font-extrabold mb-1 flex items-center gap-2"><i data-lucide="ticket-percent" class="w-6 h-6 text-[var(--mustard)]"></i> Offers & Coupons</h1>
+    <p class="text-sm text-[var(--ink-soft)] mb-5">Tap “Apply” to use a coupon on your cart.</p>
+    <div id="list" class="space-y-3"></div>
+  </div>
+</main>
+<div id="app-footer"></div>
+<div id="app-bottomnav"></div>
+<div id="app-whatsapp"></div>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+locationGate(); mountChrome('cart');
+document.getElementById('list').innerHTML = Object.entries(SRI.coupons).map(([code,c])=>`
+  <div class="card p-4 flex items-center gap-4 io">
+    <div class="w-14 h-14 rounded-xl brand-grad flex items-center justify-center text-white flex-none"><i data-lucide="ticket" class="w-7 h-7"></i></div>
+    <div class="flex-1">
+      <div class="font-extrabold text-lg tracking-wide">${code}</div>
+      <div class="text-sm text-[var(--ink-soft)]">${c.label}</div>
+      <div class="text-[11px] text-[var(--ink-soft)] mt-.5">Min order ${rupee(c.min)}</div>
+    </div>
+    <button onclick="apply('${code}')" class="btn btn-ghost px-4 py-2 text-sm font-extrabold">Apply</button>
+  </div>`).join('');
+function apply(code){ localStorage.setItem('dittomart_pending_coupon', code); toast(code+' selected — applying in cart','ok','ticket'); setTimeout(()=>location.href='cart.html',700); }
+lucide.createIcons();
+</script>
+</body>
+</html>

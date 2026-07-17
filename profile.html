@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Profile — SRI AADHYA FROZENS</title>
+<link rel="icon" type="image/png" href="assets/images/logo.png"/>
+<link rel="apple-touch-icon" sizes="180x180" href="assets/images/logo.png"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={theme:{extend:{screens:{xs:'420px'}}}}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/styles.css"/>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>if(!JSON.parse(localStorage.getItem('dittomart_location')||'null')?.latitude)location.replace('login.html');</script>
+<style>
+  /* curved green hero (matches login) */
+  .hero-wave{position:relative;overflow:hidden;background:linear-gradient(135deg,#0B4D2C 0%,#15803D 55%,#16A34A 100%);background-size:180% 180%;animation:gradientShift 11s ease infinite;border-radius:28px;box-shadow:0 22px 46px rgba(11,77,44,.26)}
+  .hero-wave::after{content:"";position:absolute;top:-40%;right:-10%;width:55%;height:130%;background:radial-gradient(closest-side,rgba(255,255,255,.18),transparent 70%);pointer-events:none}
+  .pf-avatar{position:relative;animation:floaty 5.5s ease-in-out infinite}
+  .pf-avatar::before{content:"";position:absolute;inset:-22%;border-radius:30px;background:radial-gradient(closest-side,rgba(255,255,255,.35),transparent 72%);z-index:-1;animation:glowPulse 3.4s ease-in-out infinite}
+  @keyframes glowPulse{0%,100%{opacity:.4;transform:scale(.92)}50%{opacity:.9;transform:scale(1.05)}}
+
+  .stat-card{transition:transform .25s cubic-bezier(.2,.7,.2,1),box-shadow .25s}
+  .stat-card:hover{transform:translateY(-4px);box-shadow:0 16px 34px rgba(11,77,44,.14)}
+  .stat-card .ic{transition:transform .3s}
+  .stat-card:hover .ic{transform:scale(1.18) rotate(-6deg)}
+
+  .menu-row{transition:background .2s, transform .2s, padding-left .2s}
+  .menu-row:hover{background:var(--cream);transform:translateX(3px)}
+  .menu-row .chev{transition:transform .2s}
+  .menu-row:hover .chev{transform:translateX(3px)}
+</style>
+</head>
+<body>
+<div id="app-header"></div>
+<main class="pt-16 pb-24 lg:pb-10">
+  <div class="max-w-2xl mx-auto px-4 lg:px-8 mt-4">
+
+    <!-- ===== HERO ===== -->
+    <div class="hero-wave text-white p-6 relative rise">
+      <div class="absolute text-7xl opacity-15 leaf-sway" style="right:-6px;top:-10px">🌿</div>
+      <div class="absolute text-5xl opacity-10 float-slow" style="right:34%;bottom:-8px">🍃</div>
+      <div class="relative flex items-center gap-4">
+        <div class="pf-avatar w-20 h-20 rounded-3xl bg-white/20 backdrop-blur flex items-center justify-center text-3xl font-extrabold display border border-white/30" id="avatar">G</div>
+        <div class="flex-1 min-w-0">
+          <div class="text-xl font-extrabold display truncate" id="uname">Guest User</div>
+          <div class="text-sm text-white/85 truncate" id="uphone">Not logged in</div>
+          <span class="inline-flex items-center gap-1 mt-2 text-[11px] font-bold bg-white/20 border border-white/25 px-2.5 py-1 rounded-full"><i data-lucide="badge-check" class="w-3.5 h-3.5"></i> SRIAADHYA Member</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== STATS (overlap) ===== -->
+    <div class="grid grid-cols-3 gap-3 -mt-6 relative z-10">
+      <div class="card stat-card p-3.5 text-center rise d1"><i data-lucide="wallet" class="ic w-6 h-6 text-[var(--green-700)] mx-auto"></i><div class="font-extrabold text-lg mt-1">₹250</div><div class="text-[11px] text-[var(--ink-soft)]">Wallet</div></div>
+      <div class="card stat-card p-3.5 text-center rise d2"><i data-lucide="package" class="ic w-6 h-6 text-[var(--green-700)] mx-auto"></i><div class="font-extrabold text-lg mt-1" id="orderCount">0</div><div class="text-[11px] text-[var(--ink-soft)]">Orders</div></div>
+      <div class="card stat-card p-3.5 text-center rise d3"><i data-lucide="heart" class="ic w-6 h-6 text-[var(--coral)] mx-auto"></i><div class="font-extrabold text-lg mt-1" id="favCount">0</div><div class="text-[11px] text-[var(--ink-soft)]">Saved</div></div>
+    </div>
+
+    <!-- veg preference -->
+    <div class="card p-4 mt-5 flex items-center gap-3 rise d1">
+      <div class="w-10 h-10 rounded-xl bg-[var(--leaf-100)] flex items-center justify-center flex-none"><i data-lucide="leaf" class="w-5 h-5 text-[var(--green-700)]"></i></div>
+      <div class="flex-1"><div class="font-bold text-sm">Show Veg only by default</div><div class="text-[11px] text-[var(--ink-soft)]">Auto-filters category pages</div></div>
+      <button id="vegToggle" onclick="toggleVeg()" class="w-12 h-7 rounded-full bg-[var(--line)] relative transition flex-none"><span class="absolute top-1 left-1 w-5 h-5 rounded-full bg-white shadow transition-all"></span></button>
+    </div>
+
+    <!-- favorite orders -->
+    <h3 class="display text-lg font-extrabold mt-6 mb-2 flex items-center gap-2 head-accent"><i data-lucide="star" class="w-5 h-5 text-[var(--mustard)]"></i> Favorite Orders</h3>
+    <div id="favs" class="space-y-3"></div>
+
+    <!-- menu -->
+    <div class="card mt-5 overflow-hidden divide-y divide-[var(--line)] rise d2">
+      <a href="orders.html" class="menu-row flex items-center gap-3 p-4"><span class="w-9 h-9 rounded-xl bg-[var(--leaf-100)] flex items-center justify-center flex-none"><i data-lucide="package" class="w-5 h-5 text-[var(--green-700)]"></i></span><span class="flex-1 font-semibold text-sm">My Orders</span><i data-lucide="chevron-right" class="chev w-4 h-4 text-[var(--ink-soft)]"></i></a>
+      <a href="address.html" class="menu-row flex items-center gap-3 p-4"><span class="w-9 h-9 rounded-xl bg-[var(--leaf-100)] flex items-center justify-center flex-none"><i data-lucide="map-pin" class="w-5 h-5 text-[var(--green-700)]"></i></span><span class="flex-1 font-semibold text-sm">Saved Addresses</span><i data-lucide="chevron-right" class="chev w-4 h-4 text-[var(--ink-soft)]"></i></a>
+      <a href="location.html" class="menu-row flex items-center gap-3 p-4"><span class="w-9 h-9 rounded-xl bg-[var(--leaf-100)] flex items-center justify-center flex-none"><i data-lucide="navigation" class="w-5 h-5 text-[var(--green-700)]"></i></span><span class="flex-1 font-semibold text-sm">Change Location</span><i data-lucide="chevron-right" class="chev w-4 h-4 text-[var(--ink-soft)]"></i></a>
+      <button onclick="openStoreHours()" class="menu-row w-full flex items-center gap-3 p-4 text-left"><span class="w-9 h-9 rounded-xl bg-[var(--leaf-100)] flex items-center justify-center flex-none"><i data-lucide="clock" class="w-5 h-5 text-[var(--green-700)]"></i></span><span class="flex-1 font-semibold text-sm">Store Hours</span><i data-lucide="chevron-right" class="chev w-4 h-4 text-[var(--ink-soft)]"></i></button>
+      <a href="https://wa.me/917092229777" target="_blank" class="menu-row flex items-center gap-3 p-4"><span class="w-9 h-9 rounded-xl bg-[#DCFCE7] flex items-center justify-center flex-none"><i data-lucide="message-circle" class="w-5 h-5 text-[#16A34A]"></i></span><span class="flex-1 font-semibold text-sm">Help & Support</span><i data-lucide="chevron-right" class="chev w-4 h-4 text-[var(--ink-soft)]"></i></a>
+    </div>
+
+    <button id="authBtn" onclick="authAction()" class="btn btn-ghost w-full mt-5 py-3.5"></button>
+    <p class="text-center text-[11px] text-[var(--ink-soft)] mt-4">SRI AADHYA FROZENS • Freshness Frozen, Goodness Preserved</p>
+  </div>
+</main>
+<div id="app-footer"></div>
+<div id="app-bottomnav"></div>
+<div id="app-whatsapp"></div>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+locationGate(); mountChrome('profile');
+
+const u = get(LS.user);
+if(u && u.loggedIn){ document.getElementById('uname').textContent=u.name||'SRIAADHYA Customer'; document.getElementById('uphone').textContent=u.phone||''; document.getElementById('avatar').textContent=(u.name||'S')[0].toUpperCase(); document.getElementById('authBtn').innerHTML='<i data-lucide="log-out" class="w-4 h-4"></i> Logout'; }
+else { document.getElementById('authBtn').innerHTML='<i data-lucide="log-in" class="w-4 h-4"></i> Login / Sign up'; }
+
+document.getElementById('orderCount').textContent = get(LS.orders,[]).length;
+const favs = get('dittomart_fav_orders',[]);
+document.getElementById('favCount').textContent = favs.length;
+document.getElementById('favs').innerHTML = favs.length ? favs.map((o,i)=>`
+  <div class="card p-4 flex items-center gap-3 rise">
+    <div class="flex -space-x-3">${o.items.slice(0,3).map(it=>`<img src="${it.img}" class="w-10 h-10 rounded-full object-cover border-2 border-white"/>`).join('')}</div>
+    <div class="flex-1"><div class="font-bold text-sm">${o.items.length} items • ${rupee(o.bill.total)}</div><div class="text-[11px] text-[var(--ink-soft)]">${o.items.map(i=>i.name.split('(')[0]).slice(0,2).join(', ')}…</div></div>
+    <button onclick="reorderFav(${i})" class="btn btn-primary px-3 py-2 text-sm"><i data-lucide="rotate-ccw" class="w-4 h-4"></i></button>
+  </div>`).join('') : `<div class="card p-5 text-center text-sm text-[var(--ink-soft)]">No favorite orders yet. Save one from order confirmation for instant reorder.</div>`;
+
+// veg toggle
+let vegOnly = get(LS.foodFilter)==='veg';
+function paintToggle(){ const t=document.getElementById('vegToggle'); t.classList.toggle('bg-[var(--green-600)]',vegOnly); t.querySelector('span').style.left=vegOnly?'1.5rem':'0.25rem'; }
+function toggleVeg(){ vegOnly=!vegOnly; set(LS.foodFilter, vegOnly?'veg':'all'); paintToggle(); toast(vegOnly?'Showing Veg only 🟢':'Showing all items','ok','leaf'); }
+paintToggle();
+
+function reorderFav(i){ const o=favs[i]; const cart=o.items.map(it=>({key:it.id,id:it.id,name:it.name,price:it.price,img:it.img,foodType:it.foodType,qty:it.qty,unit:it.unit})); set(LS.cart,cart); syncCartBadges(); toast('Cart filled','ok','rotate-ccw'); setTimeout(()=>location.href='cart.html',600); }
+function authAction(){ if(u&&u.loggedIn){ localStorage.removeItem(LS.user); toast('Logged out','','log-out'); setTimeout(()=>location.href='login.html?next=profile.html',600); } else location.href='login.html?next=profile.html'; }
+lucide.createIcons();
+</script>
+</body>
+</html>

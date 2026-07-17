@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>My Orders — SRI AADHYA FROZENS</title>
+<link rel="icon" type="image/png" href="assets/images/logo.png"/>
+<link rel="apple-touch-icon" sizes="180x180" href="assets/images/logo.png"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={theme:{extend:{screens:{xs:'420px'}}}}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/styles.css"/>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>if(!JSON.parse(localStorage.getItem('dittomart_location')||'null')?.latitude)location.replace('login.html');</script>
+</head>
+<body>
+<div id="app-header"></div>
+<main class="pt-16 pb-24 lg:pb-10">
+  <div class="max-w-2xl mx-auto px-4 lg:px-8 mt-4">
+    <h1 class="display text-2xl font-extrabold mb-4 flex items-center gap-2"><i data-lucide="package" class="w-6 h-6 text-[var(--green-700)]"></i> My Orders</h1>
+    <div id="empty" class="hidden card p-10 text-center">
+      <div class="text-5xl mb-2">🧾</div><p class="font-bold text-lg">No orders yet</p>
+      <p class="text-sm text-[var(--ink-soft)] mt-1">Your past orders & 1-tap reorder will show here</p>
+      <a href="home.html" class="btn btn-primary mt-4 px-6 py-3 inline-flex">Start shopping</a>
+    </div>
+    <div id="list" class="space-y-4"></div>
+  </div>
+</main>
+<div id="app-footer"></div>
+<div id="app-bottomnav"></div>
+<div id="app-whatsapp"></div>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+locationGate(); mountChrome('orders');
+const orders = get(LS.orders,[]);
+if(!orders.length) document.getElementById('empty').classList.remove('hidden');
+else document.getElementById('list').innerHTML = orders.map((o,idx)=>{
+  const d = new Date(o.placedAt);
+  const statusColor = o.status==='Delivered'?'bg-[var(--leaf-100)] text-[var(--green-800)]':'bg-yellow-100 text-yellow-800';
+  return `<div class="card p-4 io">
+    <div class="flex items-center justify-between mb-2">
+      <div><div class="font-extrabold">${o.id}</div><div class="text-[11px] text-[var(--ink-soft)]">${d.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})} • ${d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}</div></div>
+      <span class="text-[11px] font-bold px-2.5 py-1 rounded-full ${statusColor}">${o.status}</span>
+    </div>
+    <div class="flex gap-2 overflow-x-auto hide-scroll pb-1 mb-2">
+      ${o.items.map(i=>`<div class="flex-none text-center w-14"><img src="${i.img}" class="w-14 h-14 rounded-lg object-cover"/><div class="text-[10px] mt-.5 truncate">×${i.qty}</div></div>`).join('')}
+    </div>
+    <div class="flex items-center justify-between border-t border-[var(--line)] pt-3">
+      <div class="text-sm"><span class="text-[var(--ink-soft)]">Total </span><b>${rupee(o.bill.total)}</b></div>
+      <div class="flex gap-2">
+        <button onclick="track(${idx})" class="btn btn-ghost px-3 py-2 text-sm"><i data-lucide="map-pin" class="w-4 h-4"></i> Track</button>
+        <button onclick="reorder(${idx})" class="btn btn-primary px-3 py-2 text-sm"><i data-lucide="rotate-ccw" class="w-4 h-4"></i> Reorder</button>
+      </div>
+    </div>
+  </div>`;
+}).join('');
+lucide.createIcons(); initReveal();
+
+function track(i){ set(LS.activeOrder, get(LS.orders,[])[i]); location.href='tracking.html'; }
+function reorder(i){ const o=get(LS.orders,[])[i]; const cart=o.items.map(it=>({key:it.id,id:it.id,name:it.name,price:it.price,img:it.img,foodType:it.foodType,qty:it.qty,unit:it.unit})); set(LS.cart,cart); syncCartBadges(); toast('Cart filled — ready to reorder','ok','rotate-ccw'); setTimeout(()=>location.href='cart.html',600); }
+</script>
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Order Confirmed — SRI AADHYA FROZENS</title>
+<link rel="icon" type="image/png" href="assets/images/logo.png"/>
+<link rel="apple-touch-icon" sizes="180x180" href="assets/images/logo.png"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={theme:{extend:{screens:{xs:'420px'}}}}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/styles.css"/>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>if(!JSON.parse(localStorage.getItem('dittomart_location')||'null')?.latitude)location.replace('login.html');</script>
+</head>
+<body>
+<main class="pt-8 pb-28 lg:pb-10">
+  <div class="max-w-2xl mx-auto px-5">
+    <div class="text-center" style="animation:bounceIn .7s ease">
+      <div class="w-24 h-24 rounded-full brand-grad flex items-center justify-center mx-auto mb-4 relative">
+        <div class="absolute inset-0 rounded-full pulse-ring"></div>
+        <i data-lucide="check" class="w-12 h-12 text-white"></i>
+      </div>
+      <h1 class="display text-2xl font-extrabold">Order Confirmed! 🎉</h1>
+      <p class="text-[var(--ink-soft)] text-sm mt-1">Thank you for shopping with SRI AADHYA FROZENS</p>
+      <div class="inline-flex items-center gap-2 bg-[var(--leaf-100)] text-[var(--green-800)] px-4 py-2 rounded-full font-extrabold mt-3" id="orderId"></div>
+    </div>
+
+    <!-- ETA -->
+    <div class="card p-4 mt-6 flex items-center gap-3">
+      <div class="w-12 h-12 rounded-xl bg-[var(--leaf-100)] flex items-center justify-center"><i data-lucide="bike" class="w-6 h-6 text-[var(--green-700)]"></i></div>
+      <div class="flex-1"><div class="font-bold">Arriving in <span id="eta">30</span> minutes</div><div class="text-[12px] text-[var(--ink-soft)]">Delivering to <span id="area"></span></div></div>
+      <div class="text-2xl font-extrabold text-[var(--green-700)] display" id="etaClock">30:00</div>
+    </div>
+
+    <!-- summary -->
+    <div class="card p-5 mt-4">
+      <h3 class="font-extrabold mb-3">Order Summary</h3>
+      <div id="items" class="space-y-2"></div>
+      <div id="bill" class="space-y-1.5 text-sm border-t border-[var(--line)] mt-3 pt-3"></div>
+    </div>
+
+    <!-- save to favorites -->
+    <div class="card p-4 mt-4 flex items-center gap-3 bg-[var(--cream-2)]">
+      <i data-lucide="heart" class="w-6 h-6 text-[var(--coral)] flex-none"></i>
+      <div class="flex-1 text-sm"><b>Save this order to favorites</b><div class="text-[12px] text-[var(--ink-soft)]">One-tap reorder next time</div></div>
+      <button onclick="saveFav(this)" class="btn btn-ghost px-3 py-2 text-sm">Save</button>
+    </div>
+
+    <div class="flex flex-col sm:flex-row gap-3 mt-5">
+      <button onclick="location.href='tracking.html'" class="btn btn-primary flex-1 py-3.5"><i data-lucide="map-pin" class="w-4 h-4"></i> Track Order</button>
+      <button onclick="location.href='home.html'" class="btn btn-ghost flex-1 py-3.5">Continue Shopping</button>
+    </div>
+  </div>
+</main>
+<div id="app-whatsapp"></div>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+<script src="assets/js/animations.js"></script>
+<script>
+locationGate(); mountChrome('');
+confettiBurst(140);
+
+const cart = getCart();
+const ck = get('dittomart_checkout', null) || (function(){ const sub=cartSubtotal(); const del=deliveryCharge(); const tax=Math.round(sub*0.05); return {sub,disc:0,del,tax,total:sub+del+tax}; })();
+const oid = 'DM-' + Math.floor(100000+Math.random()*900000);
+const addr = get(LS.addr,[]).find(a=>a.id===get(LS.activeAddr));
+
+const order = { id:oid, items:cart.map(i=>({id:i.id,name:i.name,price:i.price,qty:i.qty,img:i.img,foodType:i.foodType,unit:i.unit})),
+  bill:ck, status:'Placed', placedAt:new Date().toISOString(), eta:SRI.BRAND.deliveryTime,
+  address:addr||{label:'Home',street:deliveringArea()}, payMethod:get('dittomart_pay_method','upi') };
+
+const orders = get(LS.orders,[]); orders.unshift(order); set(LS.orders,orders);
+set(LS.activeOrder, order);
+clearCart();
+
+document.getElementById('orderId').innerHTML = `<i data-lucide="package" class="w-4 h-4"></i> ${oid}`;
+document.getElementById('area').textContent = (addr?addr.label+' • ':'')+deliveringArea();
+document.getElementById('items').innerHTML = order.items.map(i=>`
+  <div class="flex items-center gap-2 text-sm"><img src="${i.img}" class="w-9 h-9 rounded-lg object-cover"/>
+  <span class="flex items-center gap-1 flex-1">${foodMark(i.foodType)} ${i.name} <span class="text-[var(--ink-soft)]">× ${i.qty}</span></span>
+  <span class="font-bold">${rupee(i.price*i.qty)}</span></div>`).join('');
+document.getElementById('bill').innerHTML = `
+  <div class="flex justify-between"><span class="text-[var(--ink-soft)]">Item total</span><span>${rupee(ck.sub)}</span></div>
+  ${ck.disc?`<div class="flex justify-between text-[var(--green-700)]"><span>Discount</span><span>− ${rupee(ck.disc)}</span></div>`:''}
+  <div class="flex justify-between"><span class="text-[var(--ink-soft)]">Delivery</span><span>${rupee(ck.del)}</span></div>
+  <div class="flex justify-between"><span class="text-[var(--ink-soft)]">Taxes</span><span>${rupee(ck.tax)}</span></div>
+  <div class="flex justify-between font-extrabold text-base border-t border-[var(--line)] pt-2"><span>Paid (${order.payMethod.toUpperCase()})</span><span class="text-[var(--green-800)]">${rupee(ck.total)}</span></div>`;
+
+// ETA countdown
+let secs=30*60; const clk=document.getElementById('etaClock');
+setInterval(()=>{ if(secs<=0)return; secs--; const m=String(Math.floor(secs/60)).padStart(2,'0'),s=String(secs%60).padStart(2,'0'); clk.textContent=`${m}:${s}`; },1000);
+
+function saveFav(btn){ const favs=get('dittomart_fav_orders',[]); favs.unshift(order); set('dittomart_fav_orders',favs); btn.textContent='Saved ✓'; btn.disabled=true; toast('Saved to favorites ❤','ok','heart'); }
+lucide.createIcons();
+</script>
+</body>
+</html>
