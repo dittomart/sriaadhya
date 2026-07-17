@@ -18,7 +18,7 @@ export function NotServiceablePage() {
     : `Your location is outside our ${radius || 10} km delivery zone from ${city}. We're growing fast — try a different address nearby.`;
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-6 bg-[var(--cream)]">
+    <div className="min-h-dvh flex items-center justify-center px-6 py-10 bg-[var(--cream)]">
       <div className="max-w-md w-full text-center" style={{ animation: 'fadeUp .5s ease' }}>
         <div className="w-24 h-24 rounded-full bg-[var(--leaf-100)] flex items-center justify-center mx-auto mb-6 relative">
           <div className="absolute inset-0 rounded-full pulse-ring" />
@@ -29,22 +29,22 @@ export function NotServiceablePage() {
           <br />
           just yet 🌱
         </h1>
-        <p className="text-[var(--ink-soft)] text-sm mt-3">{msg}</p>
+        <p className="text-[var(--ink-soft)] text-sm mt-3 tabular-nums">{msg}</p>
 
-        <button onClick={() => navigate('/location')} className="btn btn-primary w-full mt-6 py-3">
-          <Navigation className="w-4 h-4" /> Change Location
+        <button onClick={() => navigate('/location')} className="btn btn-primary w-full mt-6">
+          <Navigation className="w-4 h-4 flex-none" /> Change Location
         </button>
-        <Link to="/home" className="btn btn-ghost w-full mt-3 py-3">
-          <Store className="w-4 h-4" /> Keep browsing
+        <Link to="/home" className="btn btn-ghost w-full mt-3">
+          <Store className="w-4 h-4 flex-none" /> Keep browsing
         </Link>
         {whatsapp && (
           <a
             href={`https://wa.me/${whatsapp}`}
             target="_blank"
             rel="noreferrer"
-            className="btn btn-ghost w-full mt-3 py-3"
+            className="btn btn-ghost w-full mt-3"
           >
-            <MessageCircle className="w-4 h-4" /> Chat with us on WhatsApp
+            <MessageCircle className="w-4 h-4 flex-none" /> Chat with us on WhatsApp
           </a>
         )}
       </div>

@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useCartSubtotal } from '@/store/cartStore';
 import { useCouponStore } from '@/store/couponStore';
 import { useLocationStore } from '@/store/locationStore';
+import { isOutOfRange } from '@/utils/deliveryRules';
 
 export interface OrderTotals {
   subtotal: number;
@@ -17,6 +18,11 @@ export interface OrderTotals {
   deliveryFeeKnown: boolean;
   /** km, straight from the backend — never re-derived on the client */
   distanceKm: number | null;
+  /** the quoted distance exceeds the store's configured delivery radius */
+  outOfRange: boolean;
+  /** the radius `outOfRange` was judged against, for the message to quote. 0
+      when the store has not configured one (and so nothing is out of range). */
+  deliveryRadiusKm: number;
   taxPercent: number;
   tax: number;
   total: number;
@@ -127,8 +133,15 @@ export function useOrderTotals(): OrderTotals {
   const freeByThreshold = freeAbove > 0 && subtotal >= freeAbove;
   const takeaway = orderType === 'takeaway';
 
-  const deliveryFeeKnown = takeaway || subtotal <= 0 || freeByThreshold || liveFee != null;
-  const deliveryFee = takeaway || subtotal <= 0 || freeByThreshold ? 0 : (liveFee ?? 0);
+  /* Past the store's radius the backend still quotes a fee — it prices the
+     distance rather than refusing it, which is how a 455 km trip comes back as
+     ₹6,628. That number is not an offer the store can honour, so it is not
+     shown or charged; the cart blocks instead. Takeaway never travels. */
+  const deliveryRadiusKm = store?.deliveryRadius ?? 0;
+  const outOfRange = !takeaway && isOutOfRange(distance, deliveryRadiusKm);
+
+  const deliveryFeeKnown = takeaway || subtotal <= 0 || freeByThreshold || (liveFee != null && !outOfRange);
+  const deliveryFee = takeaway || subtotal <= 0 || freeByThreshold || outOfRange ? 0 : (liveFee ?? 0);
 
   // the store's own tax setting — never a hardcoded rate
   const taxPercent = store?.taxEnabled ? store.taxPercent : 0;
@@ -143,6 +156,8 @@ export function useOrderTotals(): OrderTotals {
     deliveryFee,
     deliveryFeeKnown,
     distanceKm: distance,
+    outOfRange,
+    deliveryRadiusKm,
     taxPercent,
     tax,
     total: Math.max(0, subtotal - discount + deliveryFee + tax),

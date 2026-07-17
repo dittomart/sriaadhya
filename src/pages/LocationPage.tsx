@@ -100,7 +100,7 @@ export function LocationPage() {
   const acc = pending?.accuracy;
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-dvh flex flex-col">
       {/* top decorative band */}
       <div className="brand-grad-soft text-white px-6 pt-12 pb-20 relative overflow-hidden">
         <div className="absolute -right-8 -top-8 text-[120px] opacity-10 leaf-sway">🌿</div>
@@ -118,7 +118,9 @@ export function LocationPage() {
               <div className="display text-2xl font-extrabold leading-none">
                 SRI AADHYA <span style={{ color: 'var(--brand-light)' }}>FROZENS</span>
               </div>
-              <div className="text-[11px] text-white/80 font-bold uppercase tracking-widest">
+              {/* Uppercase + wide tracking is the hardest thing to read on a
+                  phone; it can't also be the smallest. */}
+              <div className="text-xs2 text-white/80 font-bold uppercase tracking-wider">
                 Freshness Frozen, Goodness Preserved
               </div>
             </div>
@@ -141,7 +143,9 @@ export function LocationPage() {
             <Navigation className={`w-5 h-5 ${detecting ? 'animate-spin' : ''}`} />
             <span>{detecting ? 'Detecting…' : 'Use my current location'}</span>
           </button>
-          <p className="text-[11px] text-center mt-2 text-[var(--ink-soft)]">
+          {/* This line is also the error channel — every geolocation failure
+              renders here, so it can't be sized as decoration. */}
+          <p className="text-xs2 text-center mt-2 text-[var(--ink-soft)]">
             {hint.error ? <span className="text-[var(--coral)]">{hint.text}</span> : hint.text}
           </p>
 
@@ -152,26 +156,28 @@ export function LocationPage() {
                 <div className="flex-1 min-w-0">
                   <div className="font-bold text-sm">{pending.area}</div>
                   {pending.address && pending.address !== pending.area && (
-                    <div className="text-[11px] text-[var(--ink-soft)]">{pending.address}</div>
+                    <div className="text-xs2 text-[var(--ink-soft)] break-words">{pending.address}</div>
                   )}
-                  <div className="text-[11px] text-[var(--ink-soft)] font-mono">
+                  {/* The pin the customer is being asked to confirm — if these
+                      digits are unreadable the confirmation is meaningless. */}
+                  <div className="text-xs2 text-[var(--ink-soft)] font-mono tabular-nums">
                     {pending.lat.toFixed(5)}, {pending.lng.toFixed(5)}
                     {acc ? ` • ±${acc} m` : ''}
                   </div>
-                  <div className="text-[11px] font-semibold mt-1">
+                  <div className="text-xs2 font-semibold mt-1">
                     {pending.serviceable ? (
-                      <span className="text-[var(--green-700)] flex items-center gap-1">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> We deliver here • {pending.distanceKm.toFixed(1)} km
-                        away
+                      <span className="text-[var(--green-700)] flex items-start gap-1 tabular-nums">
+                        <CheckCircle2 className="w-3.5 h-3.5 flex-none mt-0.5" /> We deliver here •{' '}
+                        {pending.distanceKm.toFixed(1)} km away
                       </span>
                     ) : (
-                      <span className="text-amber-700 flex items-center gap-1">
-                        <Info className="w-3.5 h-3.5" /> {pending.distanceKm.toFixed(1)} km away — outside our {radius}{' '}
-                        km zone. You can browse; ordering isn't available here yet.
+                      <span className="text-amber-700 flex items-start gap-1 tabular-nums">
+                        <Info className="w-3.5 h-3.5 flex-none mt-0.5" /> {pending.distanceKm.toFixed(1)} km away —
+                        outside our {radius} km zone. You can browse; ordering isn't available here yet.
                       </span>
                     )}
                     {acc != null && acc > 1000 && (
-                      <span className="block mt-1 text-[11px] text-[var(--ink-soft)]">
+                      <span className="block mt-1 text-xs2 text-[var(--ink-soft)]">
                         Approximate fix (±{(acc / 1000).toFixed(1)} km) — not GPS. If this looks wrong, try again
                         outdoors.
                       </span>
@@ -186,40 +192,46 @@ export function LocationPage() {
           )}
         </div>
 
-        {/* trust strip */}
+        {/* trust strip — each tile is a two-word claim over its qualifier, and
+            the qualifier carries half the meaning ("Farm" / "fresh"). Both
+            halves sit at the floor rather than the label shrinking under it. */}
         <div className="grid grid-cols-3 gap-2 mt-5 text-center">
           <div className="card p-3">
             <Timer className="w-5 h-5 text-[var(--green-700)] mx-auto" />
-            <div className="text-[11px] font-bold mt-1">{store?.deliveryTime ?? 30} min</div>
-            <div className="text-[10px] text-[var(--ink-soft)]">delivery</div>
+            <div className="text-xs2 font-bold mt-1 tabular-nums">{store?.deliveryTime ?? 30} min</div>
+            <div className="text-xs2 text-[var(--ink-soft)]">delivery</div>
           </div>
           <div className="card p-3">
             <ShieldCheck className="w-5 h-5 text-[var(--green-700)] mx-auto" />
-            <div className="text-[11px] font-bold mt-1">Quality</div>
-            <div className="text-[10px] text-[var(--ink-soft)]">assured</div>
+            <div className="text-xs2 font-bold mt-1">Quality</div>
+            <div className="text-xs2 text-[var(--ink-soft)]">assured</div>
           </div>
           <div className="card p-3">
             <Leaf className="w-5 h-5 text-[var(--green-700)] mx-auto" />
-            <div className="text-[11px] font-bold mt-1">Farm</div>
-            <div className="text-[10px] text-[var(--ink-soft)]">fresh</div>
+            <div className="text-xs2 font-bold mt-1">Farm</div>
+            <div className="text-xs2 text-[var(--ink-soft)]">fresh</div>
           </div>
         </div>
 
         {!user && (
           <div className="text-center mt-6 text-sm">
             <span className="text-[var(--ink-soft)]">Want faster checkout? </span>
-            <Link to="/login" className="font-bold text-[var(--green-700)]">
+            {/* Sits mid-sentence, so it can't take padding without pushing the
+                words around it — tap-x grows the target underneath instead. */}
+            <Link to="/login" className="tap-x font-bold text-[var(--green-700)]">
               Login / Sign up
             </Link>
             <span className="text-[var(--ink-soft)]"> (optional)</span>
           </div>
         )}
-        <p className="text-center text-[11px] text-[var(--ink-soft)] mt-3 flex items-center justify-center gap-1">
-          <Store className="w-3 h-3" /> Browse from anywhere
+        <p className="text-center text-xs2 text-[var(--ink-soft)] mt-3 flex items-start justify-center gap-1">
+          <Store className="w-3 h-3 flex-none mt-1" /> Browse from anywhere
           {radius > 0 && ` — we deliver within ${radius} km of ${store?.city ?? 'Avinashi'}`}.
         </p>
         <div className="text-center mt-4">
-          <Link to="/home" className="text-xs font-bold text-[var(--ink-soft)]">
+          {/* The only way out for someone who declines the permission prompt —
+              and it was an 89x17 line of text. */}
+          <Link to="/home" className="link-tap text-sm2 text-[var(--ink-soft)] px-3">
             Skip for now →
           </Link>
         </div>

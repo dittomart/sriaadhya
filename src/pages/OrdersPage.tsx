@@ -53,12 +53,12 @@ export function OrdersPage() {
 
   if (!user) {
     return (
-      <main className="pt-16 pb-24 lg:pb-10">
+      <main className="page">
         <div className="max-w-2xl mx-auto px-4 lg:px-8 mt-4 text-center py-16">
           <img src="/images/logo.png" alt="SRI AADHYA FROZENS" className="h-14 w-auto mx-auto mb-5 object-contain" />
           <h1 className="display text-2xl font-extrabold">Log in to see your orders</h1>
           <p className="text-[var(--ink-soft)] text-sm mt-2">Every order you place will show up here.</p>
-          <Link to="/login?next=/my-orders" className="btn btn-primary mt-5 px-6 py-3 inline-flex">
+          <Link to="/login?next=/my-orders" className="btn btn-primary mt-5 px-6 inline-flex">
             Login / Sign up
           </Link>
         </div>
@@ -67,7 +67,7 @@ export function OrdersPage() {
   }
 
   return (
-    <main className="pt-16 pb-24 lg:pb-10">
+    <main className="page">
       <div className="max-w-2xl mx-auto px-4 lg:px-8 mt-4">
         <h1 className="display text-2xl font-extrabold mb-4 flex items-center gap-2">
           <Package className="w-6 h-6 text-[var(--green-700)]" /> My Orders
@@ -84,7 +84,7 @@ export function OrdersPage() {
             <div className="text-5xl mb-2">🧾</div>
             <p className="font-bold text-lg">No orders yet</p>
             <p className="text-sm text-[var(--ink-soft)] mt-1">Your past orders &amp; 1-tap reorder will show here</p>
-            <Link to="/home" className="btn btn-primary mt-4 px-6 py-3 inline-flex">
+            <Link to="/home" className="btn btn-primary mt-4 px-6 inline-flex">
               Start shopping
             </Link>
           </div>
@@ -97,17 +97,23 @@ export function OrdersPage() {
                   <div key={o.id} className="card p-4 io">
                     <div className="flex items-center justify-between mb-2">
                       <div className="min-w-0">
-                        <Link to={`/view-order/${o.id}`} className="font-extrabold hover:text-[var(--green-700)]">
-                          {o.id}
+                        {/* The order id is the only route to the order detail; as a bare
+                            inline link its hit box was its own line-box. `-ml-1` keeps the
+                            padded target visually flush with the card's edge. */}
+                        <Link
+                          to={`/view-order/${o.id}`}
+                          className="link-tap -ml-1 max-w-full font-extrabold tabular-nums hover:text-[var(--green-700)]"
+                        >
+                          <span className="truncate">{o.id}</span>
                         </Link>
                         {d && !Number.isNaN(d.getTime()) && (
-                          <div className="text-[11px] text-[var(--ink-soft)]">
+                          <div className="text-xs2 text-[var(--ink-soft)] tabular-nums">
                             {d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} •{' '}
                             {d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
                           </div>
                         )}
                       </div>
-                      <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full flex-none ${TONE[o.status]}`}>
+                      <span className={`text-micro font-bold px-2.5 py-1 rounded-full flex-none ${TONE[o.status]}`}>
                         {STATUS_LABEL[o.status]}
                       </span>
                     </div>
@@ -115,20 +121,22 @@ export function OrdersPage() {
                       {o.items.map((i) => (
                         <div key={i.rowId} className="flex-none text-center w-14">
                           <SmartImage src={i.img} alt={i.name} className="w-14 h-14 rounded-lg object-cover" />
-                          <div className="text-[10px] mt-0.5 truncate">×{i.qty}</div>
+                          <div className="text-xs2 mt-0.5 truncate tabular-nums">×{i.qty}</div>
                         </div>
                       ))}
                     </div>
                     <div className="flex items-center justify-between border-t border-[var(--line)] pt-3">
                       <div className="text-sm">
                         <span className="text-[var(--ink-soft)]">Total </span>
-                        <b>{rupee(o.total)}</b>
+                        <b className="tabular-nums">{rupee(o.total)}</b>
                       </div>
-                      <div className="flex gap-2">
-                        <button onClick={() => navigate(`/tracking/${o.id}`)} className="btn btn-ghost px-3 py-2 text-sm">
+                      {/* `.btn` carries the 44px floor and its own padding — the px-3 py-2
+                          these used to override it with is what put them at ~36px. */}
+                      <div className="flex gap-2 flex-none">
+                        <button onClick={() => navigate(`/tracking/${o.id}`)} className="btn btn-ghost text-sm">
                           <MapPin className="w-4 h-4" /> Track
                         </button>
-                        <button onClick={() => reorder(o)} className="btn btn-primary px-3 py-2 text-sm">
+                        <button onClick={() => reorder(o)} className="btn btn-primary text-sm">
                           <RotateCcw className="w-4 h-4" /> Reorder
                         </button>
                       </div>
@@ -142,7 +150,7 @@ export function OrdersPage() {
               <button
                 onClick={() => void fetchNextPage()}
                 disabled={isFetchingNextPage}
-                className="btn btn-ghost w-full mt-4 py-3"
+                className="btn btn-ghost w-full mt-4"
               >
                 {isFetchingNextPage ? 'Loading…' : 'Load more orders'}
               </button>

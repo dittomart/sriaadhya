@@ -37,6 +37,36 @@
   --shadow-sm:0 2px 8px rgba(30,107,52,.06);
   --shadow:0 10px 30px rgba(30,107,52,.10);
   --shadow-lg:0 24px 60px rgba(30,107,52,.16);
+
+  /* ---- layout geometry ----
+     The fixed chrome used to be a set of magic numbers guessed in four places
+     (.action-bar 64px, .wa-fab 90px, #toast-wrap 96px, pb-24). The nav's height
+     was never declared at all — it emerged from padding + icon + font metrics,
+     so every guess drifted. These are now the one source of truth; anything
+     clearing the chrome derives from them. */
+  --header-h:64px;
+  --nav-h:60px;                      /* .bnav — declared, not emergent */
+  /* The home indicator / gesture bar on modern phones. 0 everywhere else. */
+  --safe-b:env(safe-area-inset-bottom, 0px);
+  /* What a fixed bottom element must clear: nav + the OS gesture bar. */
+  --nav-clear:calc(var(--nav-h) + var(--safe-b));
+
+  /* ---- touch ----
+     44px is the floor (WCAG 2.5.5, Apple HIG); Material asks 48. Anything a
+     finger lands on gets --tap, no exceptions. */
+  --tap:44px;
+  --tap-sm:40px;                     /* only inside a larger tappable parent */
+}
+
+/* Type floor. 10px and 11px were doing load-bearing work — nav labels, prices,
+   weights, "Deliver to" — and none of it survives a phone at arm's length.
+   These are the smallest sizes allowed to ship; the scale starts here. */
+:root{
+  --fs-micro:11px;                   /* badges only, never a sentence */
+  --fs-xs:12px;                      /* secondary labels — the real floor */
+  --fs-sm:13px;
+  --fs-base:14px;                    /* body on mobile */
+  --fs-md:16px;                      /* inputs — below this iOS zooms on focus */
 }
 
 *{box-sizing:border-box}
@@ -62,6 +92,14 @@ header.site-header{
   transform:none !important;
   transition:none !important;
   z-index:50;
+  height:var(--header-h);
+  /* Opaque like the rest of the fixed chrome — product photos scrolling under
+     a 72% white bar made the address and cart count hard to read. */
+  background:rgba(255,255,255,.96);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  padding-left:env(safe-area-inset-left,0px);
+  padding-right:env(safe-area-inset-right,0px);
 }
 
 /* utility */
@@ -91,15 +129,74 @@ header.site-header{
 .fm-other{border-color:#D9A300}.fm-other i{background:#D9A300}
 
 /* buttons */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;font-weight:700;border-radius:12px;cursor:pointer;border:none;transition:transform .18s ease, box-shadow .18s ease, background .2s;}
+/* .btn declared no height at all — every caller invented its own padding, and
+   the small ones landed under 44. The floor lives here now. */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;font-weight:700;
+  border-radius:12px;cursor:pointer;border:none;min-height:var(--tap);padding:.6rem 1rem;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+  transition:transform .18s ease, box-shadow .18s ease, background .2s;}
 .btn:active{transform:scale(.96)}
+.btn:disabled{cursor:not-allowed}
 .btn-primary{background:var(--green-700);color:#fff;box-shadow:0 8px 20px rgba(21,128,61,.28)}
 .btn-primary:hover{background:var(--green-800);transform:translateY(-2px);box-shadow:0 12px 26px rgba(21,128,61,.36)}
 .btn-ghost{background:var(--leaf-100);color:var(--green-800)}
 .btn-ghost:hover{background:#C9F2D6}
 .btn-dark{background:var(--ink);color:#fff}
-.chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:.4rem .85rem;font-weight:600;font-size:.8rem;cursor:pointer;transition:all .18s;white-space:nowrap}
+/* `flex-none` matters: inside the category scroller these are flex items, and
+   without it they shrink to fit the row instead of scrolling — every chip
+   collapsed to 34px wide with its label clipped.
+   The corollary: a chip will never shrink to make a row fit. Any non-scrolling
+   row of chips needs `flex-wrap` on its container or it overflows. */
+.chip{display:inline-flex;align-items:center;justify-content:center;gap:.35rem;flex:none;
+  border:1px solid var(--line);background:#fff;border-radius:999px;
+  padding:.5rem 1rem;min-height:var(--tap);font-weight:600;font-size:var(--fs-sm);cursor:pointer;
+  transition:all .18s;white-space:nowrap;max-width:60vw;overflow:hidden;text-overflow:ellipsis;
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .chip.active{background:var(--green-700);color:#fff;border-color:var(--green-700)}
+
+/* A horizontal chip scroller. `hide-scroll` removes the scrollbar, which on a
+   phone leaves nothing at all saying the row continues — the fade does that job
+   without taking space. */
+.chip-rail{position:relative;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity;
+  mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 28px),transparent 100%);
+  -webkit-mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 28px),transparent 100%)}
+.chip-rail>.chip{scroll-snap-align:start}
+
+/* ---- touch helpers ----
+   The same defect kept recurring: a bare inline <a>/<button> whose hit box is
+   its own line-box — "Skip for now" at 89x17, "Delete" at 52x17, "Change" at
+   49x17, four "Back to X" links at 328x20. Text that triggers something needs
+   a body, not just a baseline. */
+
+/* Grows the hit area past the visual bounds without moving anything around it —
+   for text links that must stay inline and can't take padding. */
+.tap-x{position:relative}
+.tap-x::after{content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:100%;height:var(--tap);min-width:var(--tap)}
+
+/* A text link that IS a target: real padding, real height, tappable. */
+.link-tap{display:inline-flex;align-items:center;gap:.35rem;min-height:var(--tap);
+  padding:.5rem .25rem;font-weight:700;-webkit-tap-highlight-color:transparent}
+
+/* Icon-only control. Never below 44 on touch. */
+.icon-btn{display:inline-flex;align-items:center;justify-content:center;
+  width:var(--tap);height:var(--tap);border-radius:12px;flex:none;border:none;background:none;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .18s,transform .18s}
+.icon-btn:active{transform:scale(.92)}
+
+/* Destructive text action (Remove / Delete). Sized, and visually separable
+   from the neutral controls it always sits beside.
+   No negative margin here: this class is authored after `@tailwind utilities`,
+   so it wins the cascade and a caller's `ml-0` would silently lose. The optical
+   pull-back is opt-in via .btn-danger-text--flush instead. */
+.btn-danger-text{display:inline-flex;align-items:center;gap:.35rem;min-height:var(--tap);
+  padding:.4rem .6rem;border:none;background:none;cursor:pointer;
+  color:var(--coral);font-weight:700;font-size:var(--fs-xs);border-radius:10px;
+  -webkit-tap-highlight-color:transparent;transition:background .18s}
+.btn-danger-text:active{background:rgba(239,91,76,.1)}
+/* Cancels the padding's optical indent so the label lines up with the text
+   above it — for left-aligned rows only, never a centered button. */
+.btn-danger-text--flush{margin-left:-.6rem}
 
 /* ---------- Animations ---------- */
 @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
@@ -166,12 +263,15 @@ header.site-header{
 .pcard:hover .pcard-img::after{opacity:1}
 .pcard img{transition:transform .55s cubic-bezier(.2,.7,.2,1)}
 .pcard:hover img{transform:scale(1.09)}
-/* floating circular ADD */
-.pcard-add{position:absolute;right:8px;bottom:-18px;z-index:6;width:40px;height:40px;border-radius:14px;
+/* floating circular ADD — the busiest target in the app */
+.pcard-add{position:absolute;right:8px;bottom:-20px;z-index:6;width:var(--tap);height:var(--tap);border-radius:15px;
   background:#fff;border:1.6px solid var(--green-600);color:var(--green-700);display:flex;align-items:center;justify-content:center;
-  box-shadow:0 8px 18px rgba(21,128,61,.20);transition:transform .2s ease, background .2s, color .2s, box-shadow .2s}
-.pcard-add:hover{background:var(--green-700);color:#fff;transform:translateY(-3px) scale(1.06);box-shadow:0 12px 24px rgba(21,128,61,.34)}
-.pcard-add:active{transform:scale(.9)}
+  box-shadow:0 8px 18px rgba(21,128,61,.20);touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+  transition:transform .2s ease, background .2s, color .2s, box-shadow .2s}
+.pcard-add:active{transform:scale(.9);background:var(--green-700);color:#fff}
+@media(hover:hover){
+  .pcard-add:hover{background:var(--green-700);color:#fff;transform:translateY(-3px) scale(1.06);box-shadow:0 12px 24px rgba(21,128,61,.34)}
+}
 /* legacy inline ADD (kept for any older markup) */
 .pcard .add-btn{transition:transform .2s ease, background .2s, color .2s, box-shadow .2s}
 .pcard:hover .add-btn{box-shadow:0 6px 16px rgba(21,128,61,.25)}
@@ -187,36 +287,89 @@ header.site-header{
   backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;font-size:1rem;box-shadow:0 4px 10px rgba(0,0,0,.12)}
 .catile-name{display:block;text-align:center;font-weight:700;font-size:12px;color:var(--ink);margin-top:8px;line-height:1.2}
 
-/* qty stepper */
-.stepper{display:inline-flex;align-items:center;border:1.5px solid var(--green-600);border-radius:10px;overflow:hidden;background:#fff}
-.stepper button{width:30px;height:30px;background:var(--leaf-100);color:var(--green-800);font-weight:800;border:none;cursor:pointer;font-size:1rem}
-.stepper button:hover{background:var(--green-600);color:#fff}
-.stepper span{min-width:30px;text-align:center;font-weight:800;color:var(--green-800)}
+/* qty stepper
+   Was 30x30 per button with the two sitting 30px apart, so − and + were a
+   coin toss on a real thumb. Full 44px on touch; the tighter desktop size
+   returns only where there's a mouse. */
+.stepper{display:inline-flex;align-items:center;border:1.5px solid var(--green-600);border-radius:12px;overflow:hidden;background:#fff}
+.stepper button{width:var(--tap);height:var(--tap);background:var(--leaf-100);color:var(--green-800);
+  font-weight:800;border:none;cursor:pointer;font-size:1.15rem;line-height:1;
+  display:flex;align-items:center;justify-content:center;transition:background .15s,color .15s}
+.stepper button:active{background:var(--green-600);color:#fff}
+.stepper span{min-width:38px;text-align:center;font-weight:800;color:var(--green-800);
+  font-size:var(--fs-base);font-variant-numeric:tabular-nums}
+@media(hover:hover){
+  .stepper button:hover{background:var(--green-600);color:#fff}
+}
+@media(min-width:1024px){
+  .stepper button{width:34px;height:34px;font-size:1rem}
+  .stepper span{min-width:32px}
+}
 
 /* toast */
-#toast-wrap{position:fixed;left:50%;transform:translateX(-50%);bottom:96px;z-index:200;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+#toast-wrap{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-clear) + 16px);
+  z-index:200;display:flex;flex-direction:column;gap:8px;pointer-events:none;
+  width:max-content;max-width:calc(100vw - 32px)}
+@media(min-width:1024px){#toast-wrap{bottom:24px}}
 .toast{background:var(--ink);color:#fff;padding:.7rem 1.1rem;border-radius:12px;font-weight:600;font-size:.85rem;box-shadow:var(--shadow-lg);display:flex;align-items:center;gap:.5rem;animation:bounceIn .4s ease}
 .toast.ok{background:var(--green-700)}
 .toast.err{background:#C0392B}
 
-/* bottom nav */
-.bnav a{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:.66rem;font-weight:600;color:#7b9184;flex:1;padding:8px 0;transition:color .2s}
+/* bottom nav — height is declared here and nowhere else; --nav-h must match.
+   `.glass` at 72% white let page text ghost through behind the labels, which
+   read as content being cut off rather than covered. Nav chrome is opaque. */
+.bnav{height:calc(var(--nav-h) + var(--safe-b));padding-bottom:var(--safe-b);
+  background:rgba(255,255,255,.96);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+.bnav a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  font-size:var(--fs-micro);font-weight:600;color:#5c7466;flex:1;height:var(--nav-h);
+  transition:color .2s}
 .bnav a.active{color:var(--green-700)}
 .bnav a.active .nav-ico{background:var(--leaf-100)}
-.nav-ico{width:38px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:10px;transition:background .2s}
+.nav-ico{width:40px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:10px;transition:background .2s}
 
-/* whatsapp fab */
-.wa-fab{position:fixed;right:16px;bottom:90px;z-index:60;width:54px;height:54px;border-radius:50%;background:#25D366;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 24px rgba(37,211,102,.45);animation:floaty 3.5s ease-in-out infinite}
-@media(min-width:1024px){.wa-fab{bottom:24px}}
+/* whatsapp fab
+   Was 54px at z-60 — above the nav (50) and the action bar (40) — bobbing on a
+   `floaty` animation right in the column where the product grid's add buttons
+   scroll past. It covered a different add button every second, and won every
+   tap it stole. Now: below both bars in the stack, still, smaller, and pulled
+   in from the right edge so it no longer shares a column with `.pcard-add`
+   (which sits at right:8px inside a card that ends at the 16px gutter).
+
+   It can still pass over a card as you scroll — a fixed element must — but at
+   z-30 the card's own button is on top and takes the tap. */
+.wa-fab{position:fixed;right:10px;bottom:calc(var(--nav-clear) + 12px);z-index:30;
+  width:46px;height:46px;border-radius:50%;background:#25D366;display:flex;align-items:center;
+  justify-content:center;box-shadow:0 6px 16px rgba(37,211,102,.38);opacity:.94;
+  transition:opacity .2s,transform .2s}
+.wa-fab:active{transform:scale(.92);opacity:1}
+.wa-fab svg{width:22px;height:22px}
+/* Pages with a sticky action bar: lift clear of it rather than overlap. */
+.has-action-bar .wa-fab{bottom:calc(var(--nav-clear) + var(--action-bar-h, 72px) + 12px)}
+@media(min-width:1024px){
+  .wa-fab{right:16px;bottom:24px;width:54px;height:54px;opacity:1}
+  .wa-fab svg{width:26px;height:26px}
+  .has-action-bar .wa-fab{bottom:24px}
+}
 
 /* hero dots */
 .dot{width:8px;height:8px;border-radius:999px;background:rgba(255,255,255,.5);transition:all .3s;cursor:pointer}
 .dot.active{width:26px;background:#fff}
 
-/* offer ticker */
+/* offer ticker
+   The track was `display:inline-block` holding two copies with a collapsed
+   whitespace text-node between them, animating to -50%. Half a space of drift
+   per cycle, and it starts mid-slide from t=0 — which is why the first message
+   read "...livery across AVINASHI" with its head already clipped. `flex` kills
+   the whitespace node so -50% lands exactly on copy 2. */
 .ticker{overflow:hidden;white-space:nowrap}
-.ticker-track{display:inline-block;animation:tickerScroll 22s linear infinite}
+.ticker-track{display:flex;width:max-content;animation:tickerScroll 26s linear infinite}
+.ticker-track>*{flex:none}
 @keyframes tickerScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+/* A marquee is motion the reader can't pause; if they've asked for less, stop
+   it and leave the first message legible rather than scrolling forever. */
+@media(prefers-reduced-motion:reduce){
+  .ticker-track{animation:none}
+}
 
 /* timeline */
 .tl-line{position:absolute;left:19px;top:8px;bottom:8px;width:3px;background:var(--line)}
@@ -250,15 +403,40 @@ header.site-header{
 /* line clamp */
 .clamp-2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 
-/* sticky bottom action bar */
-.action-bar{position:fixed;left:0;right:0;bottom:64px;z-index:40}
-@media(min-width:1024px){.action-bar{position:static}}
+/* ---- page shells ----
+   The header and nav are both position:fixed, so flow padding is the only thing
+   keeping content out from under them. Every page was hand-rolling `pt-16 pb-24`
+   and getting one end or the other wrong — the header offset was missing from
+   the layout entirely, and the bottom was double-counted. Derived from the same
+   tokens the chrome itself uses, so they cannot drift apart.
+
+   .page      — content clears the header and the nav
+   .page-bar  — same, plus room for a sticky .action-bar on top of the nav */
+.page{padding-top:var(--header-h);padding-bottom:calc(var(--nav-clear) + 16px)}
+.page-bar{padding-top:var(--header-h);
+  padding-bottom:calc(var(--nav-clear) + var(--action-bar-h, 72px) + 16px)}
+@media(min-width:1024px){
+  /* No bottom nav above lg — the action bar goes back into the flow. */
+  .page,.page-bar{padding-bottom:2.5rem}
+}
+
+/* sticky bottom action bar — sits directly on top of the nav, whatever it
+   measures. Opaque for the same reason the nav is: a checkout total has to be
+   readable, not translucent over whatever scrolled under it. */
+.action-bar{position:fixed;left:0;right:0;bottom:var(--nav-clear);z-index:40;
+  background:rgba(255,255,255,.97);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+@media(min-width:1024px){
+  .action-bar{position:static;bottom:auto;background:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+}
 
 /* modal */
 .modal-back{position:fixed;inset:0;background:rgba(17,38,26,.55);backdrop-filter:blur(3px);z-index:120;display:flex;align-items:flex-end;justify-content:center;animation:fadeIn .25s}
 @media(min-width:768px){.modal-back{align-items:center}}
-.modal-card{background:#fff;width:100%;max-width:460px;border-radius:22px 22px 0 0;animation:slideUp .3s ease}
-@media(min-width:768px){.modal-card{border-radius:22px}}
+/* Sheets rise from the bottom edge on a phone, so their last control lands
+   exactly where the home indicator is. Every modal in the app shared this. */
+.modal-card{background:#fff;width:100%;max-width:460px;border-radius:22px 22px 0 0;
+  padding-bottom:var(--safe-b);max-height:90dvh;overflow-y:auto;animation:slideUp .3s ease}
+@media(min-width:768px){.modal-card{border-radius:22px;padding-bottom:0;max-height:85dvh}}
 @keyframes slideUp{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
 
 /* desktop nav underline */
@@ -267,8 +445,14 @@ header.site-header{
 .topnav a:hover::after{width:100%}
 
 input,select,textarea{font-family:inherit}
-.field{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:.7rem .9rem;font-size:.9rem;background:#fff;transition:border .2s,box-shadow .2s}
+/* font-size was .9rem (14.4px). Safari zooms the whole page in on any input
+   under 16px at focus, then leaves it zoomed — every text field on the site
+   punished the customer for tapping it. 16px on touch, back to .9rem where
+   there's a mouse and no zoom behaviour to trigger. */
+.field{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:.7rem .9rem;
+  min-height:var(--tap);font-size:var(--fs-md);background:#fff;transition:border .2s,box-shadow .2s}
 .field:focus{outline:none;border-color:var(--green-600);box-shadow:0 0 0 3px var(--leaf-100)}
+@media(min-width:1024px){.field{font-size:.9rem}}
 
 .demo-badge{background:var(--mustard);color:#3a2e00}
 
@@ -315,7 +499,7 @@ input,select,textarea{font-family:inherit}
 .logo-rule span{height:2px;width:30px;background:var(--brand-green);border-radius:2px;display:block}
 
 /* tagline pill */
-.tagline{display:inline-flex;align-items:center;gap:.5rem;font-size:.66rem;font-weight:700;letter-spacing:.12em;
+.tagline{display:inline-flex;align-items:center;gap:.5rem;font-size:var(--fs-micro);font-weight:700;letter-spacing:.1em;
   text-transform:uppercase;color:var(--brand-dark);background:#EAF6DE;border:1px solid #CDE8B6;
   padding:.5rem 1.1rem;border-radius:18px;max-width:100%;text-align:center;line-height:1.4}
 .tagline svg{flex:none}
@@ -328,7 +512,7 @@ input,select,textarea{font-family:inherit}
   background:linear-gradient(135deg,var(--brand-green),var(--brand-dark));
   box-shadow:0 10px 20px rgba(30,107,52,.28)}
 .feat-ico svg{width:24px;height:24px}
-.feat-lbl{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em;
+.feat-lbl{font-size:var(--fs-micro);font-weight:700;text-transform:uppercase;letter-spacing:.03em;
   color:var(--brand-dark);text-align:center;line-height:1.25}
 
 /* CTA */
@@ -337,25 +521,29 @@ input,select,textarea{font-family:inherit}
   box-shadow:0 14px 30px rgba(30,107,52,.34);transition:transform .2s,box-shadow .2s}
 .cta:hover{transform:translateY(-2px);box-shadow:0 18px 38px rgba(30,107,52,.42)}
 
-/* ===== responsive overrides (placed last so they win the cascade) ===== */
+/* ===== responsive overrides (placed last so they win the cascade) =====
+   These used to force `flex-wrap:nowrap` on the four badges and then shrink the
+   font down a ladder — .56rem, then .5rem (8px) — until the row fit a 360px
+   phone. Wrapping was available the whole time and was switched off; the type
+   was sacrificed to keep one line. Two rows of legible badges beat one row of
+   8px uppercase, so the wrap comes back and the font holds at the floor. */
 @media(max-width:1023px){
   .splash-page .live-leaf.lf-tl{width:84px;top:2%;left:1%;opacity:.85}
   .splash-page .live-leaf.lf-br{width:66px;bottom:3%;right:2%;opacity:.8}
   .splash-page .logo-name{font-size:2.5rem}
-  .splash-page .feats{gap:.45rem;flex-wrap:nowrap}
-  .splash-page .feat{width:70px}
+  .splash-page .feats{gap:.75rem;flex-wrap:wrap;max-width:300px}
+  .splash-page .feat{width:66px}
   .splash-page .feat-ico{width:46px;height:46px}
   .splash-page .feat-ico svg{width:20px;height:20px}
-  .splash-page .feat-lbl{font-size:.56rem}
+  .splash-page .feat-lbl{font-size:var(--fs-micro)}
   .splash-page .cta{margin-top:1.4rem}
 }
 @media(max-width:380px){
   .splash-page .live-leaf.lf-tl,.splash-page .live-leaf.lf-br{display:none}
   .splash-page .logo-name{font-size:2.05rem}
-  .splash-page .feats{gap:.3rem}
-  .splash-page .feat{width:60px}
+  .splash-page .feats{gap:.6rem;max-width:280px}
+  .splash-page .feat{width:62px}
   .splash-page .feat-ico{width:42px;height:42px}
-  .splash-page .feat-lbl{font-size:.5rem}
 }
 
 /* ---------------------------------------------------------------------
@@ -411,7 +599,7 @@ input,select,textarea{font-family:inherit}
   display:flex;align-items:center;justify-content:center;background:#0c5a32;color:#fff;box-shadow:0 4px 10px rgba(12,90,50,.3)}
 .bb-badge .ic[data-tone="dark"]{background:#0c4d2c}
 .bb-badge .ic svg{width:60%;height:60%}
-.bb-badge .lbl{font-weight:700;color:#0c4d2c;font-size:clamp(5px,.78vw,9px);letter-spacing:.06em;line-height:1.15;text-transform:uppercase}
+.bb-badge .lbl{font-weight:700;color:#0c4d2c;font-size:clamp(9px,.78vw,9px);letter-spacing:.06em;line-height:1.15;text-transform:uppercase}
 
 /* --- MIDDLE photo panel --- */
 .bb-photo{position:relative;overflow:hidden;background:#0c4d2c}
@@ -431,8 +619,33 @@ input,select,textarea{font-family:inherit}
 .bb-right .ml{width:clamp(14px,2vw,24px);height:clamp(14px,2vw,24px);color:#cfe6a8}
 .bb-mh{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;letter-spacing:.18em;font-size:clamp(10px,1.6vw,20px)}
 .bb-mh-line{width:clamp(20px,3vw,40px);height:3px;border-radius:2px;background:linear-gradient(90deg,#f4c542,#cfe6a8)}
-.bb-mtxt{font-size:clamp(6.5px,1vw,13px);line-height:1.5;color:rgba(255,255,255,.9);max-width:32ch}
-.bb-script{font-family:'Bricolage Grotesque',sans-serif;font-style:italic;font-weight:700;color:#f4c542;font-size:clamp(9px,1.5vw,20px);line-height:1.15;margin-top:clamp(2px,.5vw,6px)}
+.bb-mtxt{font-size:clamp(12px,1vw,13px);line-height:1.5;color:rgba(255,255,255,.9);max-width:32ch}
+.bb-script{font-family:'Bricolage Grotesque',sans-serif;font-style:italic;font-weight:700;color:#f4c542;font-size:clamp(13px,1.5vw,20px);line-height:1.15;margin-top:clamp(2px,.5vw,6px)}
+
+/* ---- brand banner on a phone ----
+   This is a desktop composition: three columns whose every font is sized in
+   `vw`. Nothing ever collapsed it, so at 360px the tracks became ~163/86/85px
+   and each clamp() bottomed out on its floor — the mission paragraph rendered
+   at 6.5px, the badge labels at 5px. The floors were written as safety nets for
+   desktop scaling and quietly became the mobile design.
+
+   Below lg it stacks: brand over photo, mission underneath, everything at a
+   size a person can actually read. */
+@media(max-width:1023px){
+  .brand-banner{grid-template-columns:1fr;min-height:0}
+  .bb-left{padding:1.25rem 1rem .5rem}
+  .bb-badges{flex-wrap:wrap;justify-content:center;gap:.85rem 1.25rem}
+  .bb-badge .ic{width:30px;height:30px}
+  .bb-badge .lbl{font-size:var(--fs-micro)}
+  .bb-photo{height:140px;order:3}
+  .bb-right{padding:1rem;order:2}
+  .bb-mh{font-size:var(--fs-sm)}
+  .bb-mtxt{font-size:var(--fs-xs);max-width:none}
+  .bb-script{font-size:1rem}
+  /* The 3-column artwork can't letterbox into a stacked layout — it would
+     letterbox or crop the brand out. The CSS composition IS the mobile banner. */
+  .bb-real{display:none}
+}
 
 /* ===== brand strip (tone / taglines / usage-in-action van) ===== */
 .brand-strip{position:relative;border-radius:1.5rem;overflow:hidden;color:#fff;
@@ -451,7 +664,7 @@ input,select,textarea{font-family:inherit}
 /* tone of voice */
 .bs-tone{display:flex;justify-content:center;gap:clamp(14px,2.4vw,26px);flex-wrap:wrap}
 .bs-tone-item{display:flex;flex-direction:column;align-items:center;gap:7px;
-  font-size:10px;font-weight:700;color:rgba(255,255,255,.88);text-transform:uppercase;letter-spacing:.04em}
+  font-size:var(--fs-micro);font-weight:700;color:rgba(255,255,255,.88);text-transform:uppercase;letter-spacing:.04em}
 .bs-ic{width:clamp(40px,5vw,50px);height:clamp(40px,5vw,50px);border-radius:50%;display:flex;align-items:center;justify-content:center;
   background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.22);box-shadow:0 6px 14px rgba(0,0,0,.18);
   transition:transform .3s ease, background .3s, color .3s;animation:floatSlow 6s ease-in-out infinite}
@@ -475,6 +688,10 @@ input,select,textarea{font-family:inherit}
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
 .van .cargo::after{content:"🌿";position:absolute;right:-4px;bottom:-8px;font-size:40px;opacity:.16}
 .van .cargo img{height:22px;width:auto;object-fit:contain}
+/* Lettering painted on the van's side panel — part of the illustration, not
+   copy anyone reads, and the tagline it repeats is set legibly elsewhere on the
+   page. It scales with the drawing rather than to the type floor, which is why
+   it sits below it. The van is aria-hidden, so nothing depends on reading it. */
 .van .cargo .vt{font-size:6.5px;font-weight:700;color:#1f7a3d;letter-spacing:.05em;text-align:center;line-height:1.25;z-index:1}
 .van .cab{position:absolute;left:154px;top:30px;width:78px;height:48px;background:linear-gradient(180deg,#fff,#f4faef);
   border:2px solid #e1ece0;border-radius:9px 20px 10px 9px;box-shadow:0 10px 18px rgba(11,77,44,.12)}
@@ -565,7 +782,7 @@ input,select,textarea{font-family:inherit}
   .brand-side .logo-sri{font-size:.82rem;letter-spacing:.3em}
   .brand-side .logo-name{font-size:2.1rem}
   .brand-side .logo-rule{font-size:.8rem;letter-spacing:.34em}
-  .brand-side .tagline{font-size:.6rem;padding:.4rem .85rem;margin-top:.7rem}
+  .brand-side .tagline{font-size:var(--fs-micro);padding:.4rem .85rem;margin-top:.7rem}
   .brand-side .live-leaf.lf-tl{width:82px;top:-6px;left:-14px;opacity:.9}
   .brand-side .live-leaf.lf-br{display:none}
 }

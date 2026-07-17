@@ -3,7 +3,7 @@ import { Check, Heart, Leaf, ShieldCheck, Smile } from 'lucide-react';
 /* BRAND STRIP — tone of voice · taglines · usage in action */
 export function BrandStrip() {
   return (
-    <section className="mt-11 io">
+    <section className="mt-8 lg:mt-11 io">
       <div className="text-center mb-5">
         <h2 className="display text-xl lg:text-2xl font-extrabold">The SRI AADHYA promise</h2>
         <p className="text-sm text-[var(--ink-soft)] mt-1.5">Friendly, trustworthy &amp; caring — fresh to your doorstep.</p>
@@ -13,25 +13,25 @@ export function BrandStrip() {
         <div className="bs-col">
           <h4 className="bs-head">TONE OF VOICE</h4>
           <div className="bs-tone">
-            <div className="bs-tone-item">
+            <div className="bs-tone-item text-micro">
               <span className="bs-ic">
                 <Smile className="w-5 h-5" />
               </span>
               Friendly
             </div>
-            <div className="bs-tone-item">
+            <div className="bs-tone-item text-micro">
               <span className="bs-ic">
                 <ShieldCheck className="w-5 h-5" />
               </span>
               Trustworthy
             </div>
-            <div className="bs-tone-item">
+            <div className="bs-tone-item text-micro">
               <span className="bs-ic">
                 <Leaf className="w-5 h-5" />
               </span>
               Caring
             </div>
-            <div className="bs-tone-item">
+            <div className="bs-tone-item text-micro">
               <span className="bs-ic">
                 <Heart className="w-5 h-5" />
               </span>
@@ -69,7 +69,11 @@ export function BrandStrip() {
         <div className="bs-col">
           <h4 className="bs-head">USAGE IN ACTION</h4>
           <div className="bs-van-wrap">
-            <div className="van">
+            {/* A drawing, not content. Its side-panel lettering is sized to the
+                illustration rather than the type floor, so it must not reach a
+                screen reader as text — the tagline it repeats is set legibly
+                elsewhere on this page. */}
+            <div className="van" aria-hidden="true">
               <div className="cargo">
                 <img src="/images/logo.png" alt="SRI AADHYA" />
                 <span className="vt">

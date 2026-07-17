@@ -38,7 +38,7 @@ export function OrderSuccessPage() {
 
   if (!user) {
     return (
-      <main className="pt-8 pb-28 lg:pb-10">
+      <main className="page">
         <div className="max-w-2xl mx-auto px-5 text-center py-16">
           <img src="/images/logo.png" alt="SRI AADHYA FROZENS" className="h-14 w-auto mx-auto mb-5 object-contain" />
           <h1 className="display text-2xl font-extrabold">Log in to see this order</h1>
@@ -47,7 +47,7 @@ export function OrderSuccessPage() {
           </p>
           <Link
             to={`/login?next=${encodeURIComponent(`/view-order/${uniqueOrderId ?? ''}`)}`}
-            className="btn btn-primary mt-5 px-6 py-3 inline-flex"
+            className="btn btn-primary mt-5 px-6 inline-flex"
           >
             Login / Sign up
           </Link>
@@ -60,12 +60,12 @@ export function OrderSuccessPage() {
 
   if (!order) {
     return (
-      <main className="pt-8 pb-28 lg:pb-10">
+      <main className="page">
         <div className="max-w-2xl mx-auto px-5 text-center py-16">
           <img src="/images/logo.png" alt="SRI AADHYA FROZENS" className="h-14 w-auto mx-auto mb-5 object-contain" />
           <h1 className="display text-2xl font-extrabold">We couldn't find that order</h1>
           <p className="text-[var(--ink-soft)] text-sm mt-2">It may still be settling — check My Orders in a moment.</p>
-          <button onClick={() => navigate('/my-orders')} className="btn btn-primary mt-5 px-6 py-3">
+          <button onClick={() => navigate('/my-orders')} className="btn btn-primary mt-5 px-6">
             My Orders
           </button>
         </div>
@@ -76,7 +76,7 @@ export function OrderSuccessPage() {
   const awaitingPayment = order.status === 'awaiting-payment' || order.status === 'payment-failed';
 
   return (
-    <main className="pt-8 pb-28 lg:pb-10">
+    <main className="page">
       <div className="max-w-2xl mx-auto px-5">
         <div className="text-center" style={{ animation: 'bounceIn .7s ease' }}>
           <div className="w-24 h-24 rounded-full brand-grad flex items-center justify-center mx-auto mb-4 relative">
@@ -87,8 +87,8 @@ export function OrderSuccessPage() {
             {awaitingPayment ? 'Order placed — payment pending' : 'Order Confirmed! 🎉'}
           </h1>
           <p className="text-[var(--ink-soft)] text-sm mt-1">Thank you for shopping with SRI AADHYA FROZENS</p>
-          <div className="inline-flex items-center gap-2 bg-[var(--leaf-100)] text-[var(--green-800)] px-4 py-2 rounded-full font-extrabold mt-3">
-            <Package className="w-4 h-4" /> {order.id}
+          <div className="inline-flex items-center gap-2 bg-[var(--leaf-100)] text-[var(--green-800)] px-4 py-2 rounded-full font-extrabold mt-3 tabular-nums">
+            <Package className="w-4 h-4 flex-none" /> {order.id}
           </div>
         </div>
 
@@ -98,10 +98,10 @@ export function OrderSuccessPage() {
             <Bike className="w-6 h-6 text-[var(--green-700)]" />
           </div>
           <div className="flex-1">
-            <div className="font-bold">Arriving in about {order.etaMin} minutes</div>
-            <div className="text-[12px] text-[var(--ink-soft)]">
-              {order.address || store?.city || 'Avinashi'}
+            <div className="font-bold">
+              Arriving in about <span className="tabular-nums">{order.etaMin}</span> minutes
             </div>
+            <div className="text-xs2 text-[var(--ink-soft)]">{order.address || store?.city || 'Avinashi'}</div>
           </div>
         </div>
 
@@ -114,51 +114,56 @@ export function OrderSuccessPage() {
                 <SmartImage src={i.img} alt={i.name} className="w-9 h-9 rounded-lg object-cover flex-none" />
                 <span className="flex-1 min-w-0">
                   <span className="block truncate">
-                    {i.name} <span className="text-[var(--ink-soft)]">× {i.qty}</span>
+                    {i.name} <span className="text-[var(--ink-soft)] tabular-nums">× {i.qty}</span>
                   </span>
                   {i.customizations.length > 0 && (
-                    <span className="block text-[11px] text-[var(--ink-soft)] truncate">
+                    <span className="block text-xs2 text-[var(--ink-soft)] truncate">
                       {i.customizations.map((c) => c.addonName).join(', ')}
                     </span>
                   )}
                 </span>
-                <span className="font-bold">{rupee(i.unitPrice * i.qty)}</span>
+                <span className="font-bold flex-none tabular-nums">{rupee(i.unitPrice * i.qty)}</span>
               </div>
             ))}
           </div>
           <div className="space-y-1.5 text-sm border-t border-[var(--line)] mt-3 pt-3">
             <div className="flex justify-between">
               <span className="text-[var(--ink-soft)]">Item total</span>
-              <span>{rupee(order.subtotal)}</span>
+              <span className="tabular-nums">{rupee(order.subtotal)}</span>
             </div>
             {order.discount > 0 && (
-              <div className="flex justify-between text-[var(--green-700)]">
-                <span>Discount{order.couponCode && ` (${order.couponCode})`}</span>
-                <span>− {rupee(order.discount)}</span>
+              <div className="flex justify-between gap-3 text-[var(--green-700)]">
+                <span className="min-w-0 truncate">Discount{order.couponCode && ` (${order.couponCode})`}</span>
+                <span className="flex-none tabular-nums">− {rupee(order.discount)}</span>
               </div>
             )}
             <div className="flex justify-between">
               <span className="text-[var(--ink-soft)]">Delivery</span>
-              <span>{rupee(order.deliveryCharge)}</span>
+              <span className="tabular-nums">{rupee(order.deliveryCharge)}</span>
             </div>
             {order.tax > 0 && (
               <div className="flex justify-between">
                 <span className="text-[var(--ink-soft)]">Taxes</span>
-                <span>{rupee(order.tax)}</span>
+                <span className="tabular-nums">{rupee(order.tax)}</span>
               </div>
             )}
-            <div className="flex justify-between font-extrabold text-base border-t border-[var(--line)] pt-2">
-              <span>{awaitingPayment ? 'To pay' : 'Paid'}{order.paymentMode && ` (${order.paymentMode})`}</span>
-              <span className="text-[var(--green-800)]">{rupee(order.total)}</span>
+            {/* The label carries the payment mode, so it can run long ("Paid (Credit
+                Card)") — the total is what must survive a narrow phone, not the label. */}
+            <div className="flex justify-between gap-3 font-extrabold text-base border-t border-[var(--line)] pt-2">
+              <span className="min-w-0 truncate">
+                {awaitingPayment ? 'To pay' : 'Paid'}
+                {order.paymentMode && ` (${order.paymentMode})`}
+              </span>
+              <span className="flex-none text-[var(--green-800)] tabular-nums">{rupee(order.total)}</span>
             </div>
           </div>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 mt-5">
-          <button onClick={() => navigate(`/tracking/${order.id}`)} className="btn btn-primary flex-1 py-3.5">
+          <button onClick={() => navigate(`/tracking/${order.id}`)} className="btn btn-primary flex-1">
             <MapPin className="w-4 h-4" /> Track Order
           </button>
-          <button onClick={() => navigate('/home')} className="btn btn-ghost flex-1 py-3.5">
+          <button onClick={() => navigate('/home')} className="btn btn-ghost flex-1">
             Continue Shopping
           </button>
         </div>

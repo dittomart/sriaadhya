@@ -2,7 +2,10 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- viewport-fit=cover is what makes env(safe-area-inset-*) report real
+         numbers; without it the bottom nav sits under the home indicator on
+         every notched phone. No maximum-scale/user-scalable — pinch-zoom stays. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>SRI AADHYA FROZENS — Freshness Frozen, Goodness Preserved</title>
     <link rel="icon" type="image/png" href="/images/logo.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/images/logo.png" />

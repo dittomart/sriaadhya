@@ -62,7 +62,7 @@ export function HomePage() {
   const phoneDigits = phone.replace(/\D/g, '');
 
   return (
-    <main className="pt-16 pb-24 lg:pb-10">
+    <main className="page">
       {/* offer ticker */}
       <div className="aurora text-white text-xs font-bold py-2 ticker">
         <div className="ticker-track">
@@ -79,17 +79,19 @@ export function HomePage() {
 
       <div className="max-w-7xl mx-auto px-4 lg:px-8">
         {/* mobile search */}
-        <div className="md:hidden flex items-center bg-white border border-[var(--line)] rounded-2xl px-3 h-12 mt-4 shadow-sm">
-          <Search className="w-4 h-4 text-[var(--green-700)]" />
+        <label className="md:hidden flex items-center bg-white border border-[var(--line)] rounded-2xl px-3 h-12 mt-4 shadow-sm cursor-text">
+          <Search className="w-4 h-4 text-[var(--green-700)] shrink-0" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             onKeyDown={submitSearch}
+            type="search"
             placeholder="Search mushroom, paneer, samosa…"
-            className="flex-1 bg-transparent outline-none text-sm px-2 min-w-0"
+            aria-label="Search products"
+            className="flex-1 h-full bg-transparent outline-none text-md2 px-2 min-w-0"
           />
-          <Mic className="w-4 h-4 text-[var(--ink-soft)]" />
-        </div>
+          <Mic className="w-4 h-4 text-[var(--ink-soft)] shrink-0" />
+        </label>
 
         <BrandBanner />
 
@@ -100,8 +102,8 @@ export function HomePage() {
               <Timer className="w-5 h-5 text-[var(--green-700)]" />
             </div>
             <div>
-              <div className="text-sm font-extrabold">{store?.deliveryTime ?? 30}-min</div>
-              <div className="text-[11px] text-[var(--ink-soft)]">lightning delivery</div>
+              <div className="text-sm font-extrabold tabular-nums">{store?.deliveryTime ?? 30}-min</div>
+              <div className="text-xs2 text-[var(--ink-soft)]">lightning delivery</div>
             </div>
           </div>
           <div className="card card-grad p-3.5 flex items-center gap-3 io">
@@ -113,7 +115,7 @@ export function HomePage() {
             </div>
             <div>
               <div className="text-sm font-extrabold">Secure</div>
-              <div className="text-[11px] text-[var(--ink-soft)]">UPI / card payments</div>
+              <div className="text-xs2 text-[var(--ink-soft)]">UPI / card payments</div>
             </div>
           </div>
           <div className="card card-grad p-3.5 flex items-center gap-3 io">
@@ -125,7 +127,7 @@ export function HomePage() {
             </div>
             <div>
               <div className="text-sm font-extrabold">Quality first</div>
-              <div className="text-[11px] text-[var(--ink-soft)]">hygienically packed</div>
+              <div className="text-xs2 text-[var(--ink-soft)]">hygienically packed</div>
             </div>
           </div>
           {phoneDigits ? (
@@ -138,7 +140,7 @@ export function HomePage() {
               </div>
               <div>
                 <div className="text-sm font-extrabold">Call us</div>
-                <div className="text-[11px] text-[var(--ink-soft)]">{phone}</div>
+                <div className="text-xs2 text-[var(--ink-soft)] tabular-nums">{phone}</div>
               </div>
             </a>
           ) : (
@@ -151,7 +153,7 @@ export function HomePage() {
               </div>
               <div>
                 <div className="text-sm font-extrabold">Farm fresh</div>
-                <div className="text-[11px] text-[var(--ink-soft)]">straight to your door</div>
+                <div className="text-xs2 text-[var(--ink-soft)]">straight to your door</div>
               </div>
             </div>
           )}
@@ -161,11 +163,17 @@ export function HomePage() {
         <section className="mt-9">
           <div className="flex items-center justify-between mb-4">
             <h2 className="display text-xl lg:text-2xl font-extrabold head-accent">Shop by Category</h2>
-            <Link to="/category" className="text-sm font-bold text-[var(--green-700)] flex items-center gap-1">
+            <Link to="/category" className="link-tap text-sm text-[var(--green-700)] -mr-1">
               See all <ChevronRight className="w-4 h-4" />
             </Link>
           </div>
-          <div className="grid grid-cols-3 xs:grid-cols-4 md:grid-cols-4 lg:grid-cols-8 gap-3">
+          {/* Was `xs:grid-cols-4`, which was inert while xs=420px and started
+              firing when xs became 380px. Category names come from the store,
+              not a fixture, so they can be any length — and 4 columns at 380px
+              is a 78px tile, too narrow for a two-word name at 12px. The row
+              would wrap to different line counts per tile and go ragged. Phones
+              keep 3 (108px at 380px); 4 waits for a tablet's ~145px. */}
+          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-8 gap-3">
             {catsLoading
               ? Array.from({ length: 8 }).map((_, i) => <div key={i} className="skeleton aspect-square rounded-[20px]" />)
               : (categories ?? []).map((c) => <CategoryTile key={c.id} category={c} />)}
@@ -179,7 +187,7 @@ export function HomePage() {
               <h2 className="display text-xl lg:text-2xl font-extrabold head-accent flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-[var(--mustard)]" /> {shelfTitle}
               </h2>
-              <Link to="/category" className="text-sm font-bold text-[var(--green-700)] flex items-center gap-1">
+              <Link to="/category" className="link-tap text-sm text-[var(--green-700)] -mr-1">
                 See all <ChevronRight className="w-4 h-4" />
               </Link>
             </div>

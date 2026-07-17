@@ -84,7 +84,7 @@ export function SplashPage() {
         <Link to="/location" className="cta mt-10" style={{ animation: 'fadeUp .7s .55s both' }}>
           Get Started <ArrowRight className="w-5 h-5" />
         </Link>
-        <p className="text-[12px] text-[var(--ink-soft)] mt-4" style={{ animation: 'fadeIn 1s .7s both' }}>
+        <p className="text-xs2 text-[var(--ink-soft)] mt-4" style={{ animation: 'fadeIn 1s .7s both' }}>
           100% Natural • Hygienically Packed • Avinashi, Tirupur
         </p>
       </section>

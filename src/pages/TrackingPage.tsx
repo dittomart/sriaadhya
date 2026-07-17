@@ -51,13 +51,13 @@ export function TrackingPage() {
 
   if (!user) {
     return (
-      <main className="pt-16 pb-24 lg:pb-10">
+      <main className="page">
         <div className="max-w-2xl mx-auto px-4 lg:px-8 mt-4 text-center py-16">
           <img src="/images/logo.png" alt="SRI AADHYA FROZENS" className="h-14 w-auto mx-auto mb-5 object-contain" />
           <h1 className="display text-2xl font-extrabold">Log in to track your order</h1>
           <Link
             to={`/login?next=${encodeURIComponent(`/tracking/${uniqueOrderId ?? ''}`)}`}
-            className="btn btn-primary mt-5 px-6 py-3 inline-flex"
+            className="btn btn-primary mt-5 px-6 inline-flex"
           >
             Login / Sign up
           </Link>
@@ -70,13 +70,13 @@ export function TrackingPage() {
 
   if (!order) {
     return (
-      <main className="pt-16 pb-24 lg:pb-10">
+      <main className="page">
         <div className="max-w-2xl mx-auto px-4 lg:px-8 mt-4">
           <div className="card p-10 text-center rise">
             <div className="text-6xl mb-3 float">📦</div>
             <p className="font-extrabold text-lg">No order to track</p>
             <p className="text-sm text-[var(--ink-soft)] mt-1">Place an order to follow it live here.</p>
-            <Link to="/home" className="btn btn-primary mt-4 px-6 py-3 inline-flex">
+            <Link to="/home" className="btn btn-primary mt-4 px-6 inline-flex">
               Start shopping <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
@@ -115,7 +115,7 @@ export function TrackingPage() {
   };
 
   return (
-    <main className="pt-16 pb-24 lg:pb-10">
+    <main className="page">
       <div className="max-w-2xl mx-auto px-4 lg:px-8 mt-4">
         {/* ===== HERO ===== */}
         <div className="hero-wave text-white p-6 relative rise">
@@ -130,13 +130,13 @@ export function TrackingPage() {
                 <CheckCircle2 className="w-8 h-8" />
               ) : (
                 <>
-                  <span className="display text-3xl font-extrabold leading-none">{order.etaMin}</span>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-white/85 mt-0.5">min</span>
+                  <span className="display text-3xl font-extrabold leading-none tabular-nums">{order.etaMin}</span>
+                  <span className="text-micro font-bold uppercase tracking-widest text-white/85 mt-0.5">min</span>
                 </>
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-bold bg-white/20 border border-white/25 px-2.5 py-1 rounded-full">
+              <span className="inline-flex items-center gap-1.5 text-micro font-bold bg-white/20 border border-white/25 px-2.5 py-1 rounded-full">
                 {!delivered && !dead && <span className="w-2 h-2 rounded-full bg-[#4ADE80] animate-pulse" />}
                 <span>{STATUS_LABEL[status]}</span>
               </span>
@@ -165,24 +165,27 @@ export function TrackingPage() {
               <div className="pin-pulse w-9 h-9 rounded-full bg-white flex items-center justify-center shadow">
                 <Store className="w-4 h-4 text-[var(--green-700)]" />
               </div>
-              <span className="text-[10px] font-bold bg-white/80 px-1.5 rounded">Store</span>
+              <span className="text-micro font-bold bg-white/80 px-1.5 rounded">Store</span>
             </div>
             <div className="absolute right-[5%] top-1/2 -translate-y-1/2 flex flex-col items-center gap-1">
               <div className="pin-pulse w-9 h-9 rounded-full bg-[var(--green-700)] flex items-center justify-center shadow">
                 <Home className="w-4 h-4 text-white" />
               </div>
-              <span className="text-[10px] font-bold bg-white/80 px-1.5 rounded">You</span>
+              <span className="text-micro font-bold bg-white/80 px-1.5 rounded">You</span>
             </div>
-            <div className="absolute bottom-3 left-3 text-[11px] font-bold bg-white/85 backdrop-blur px-2.5 py-1 rounded-full flex items-center gap-1 shadow">
+            <div className="absolute bottom-3 left-3 text-micro font-bold bg-white/85 backdrop-blur px-2.5 py-1 rounded-full flex items-center gap-1 shadow">
               <Navigation className="w-3 h-3 text-[var(--green-700)]" /> {store?.city ?? 'Avinashi'} → You
             </div>
-            {/* the courier's own live map, when the store uses one */}
+            {/* The courier's own live map, when the store uses one. Reads as a
+                small badge but is a real link out to the tracker, so it takes
+                the 44px floor — growing upward from its pinned bottom edge,
+                which the map has room for. */}
             {trackingUrl && (
               <a
                 href={trackingUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="absolute bottom-3 right-3 text-[11px] font-bold bg-[var(--green-700)] text-white px-2.5 py-1 rounded-full flex items-center gap-1 shadow"
+                className="absolute bottom-2 right-2 min-h-[var(--tap)] text-micro font-bold bg-[var(--green-700)] text-white px-4 rounded-full inline-flex items-center gap-1 shadow"
               >
                 Live map <ExternalLink className="w-3 h-3" />
               </a>
@@ -207,7 +210,7 @@ export function TrackingPage() {
                     </div>
                     <div>
                       <div className="font-bold text-sm">{STATUS_LABEL[s.k]}</div>
-                      <div className="text-[12px] text-[var(--ink-soft)]">{s.sub}</div>
+                      <div className="text-xs2 text-[var(--ink-soft)]">{s.sub}</div>
                     </div>
                   </div>
                 ))}
@@ -232,10 +235,11 @@ export function TrackingPage() {
             )}
             <div className="flex-1 min-w-0">
               <div className="font-extrabold truncate">{rider.name}</div>
-              <div className="text-[12px] text-[var(--ink-soft)] flex items-center gap-1">
+              <div className="text-xs2 text-[var(--ink-soft)] flex items-center gap-1">
                 {rider.rating > 0 && (
                   <>
-                    <Star className="w-3 h-3 fill-[var(--mustard)] text-[var(--mustard)]" /> {rider.rating.toFixed(1)} •{' '}
+                    <Star className="w-3 h-3 fill-[var(--mustard)] text-[var(--mustard)] flex-none" />{' '}
+                    <span className="tabular-nums">{rider.rating.toFixed(1)}</span> •{' '}
                   </>
                 )}
                 Your delivery partner
@@ -279,7 +283,7 @@ export function TrackingPage() {
             <p className="text-sm text-[var(--ink-soft)] mt-1">
               {dead ? 'Order it again whenever you like.' : 'Reorder your favourites in a single tap.'}
             </p>
-            <button onClick={reorder} className="btn btn-primary mt-4 px-6 py-3 shine-wrap">
+            <button onClick={reorder} className="btn btn-primary mt-4 px-6 shine-wrap">
               <RotateCcw className="w-4 h-4" /> Reorder in 1 tap
             </button>
           </div>

@@ -40,9 +40,9 @@ export function CouponPage() {
   };
 
   return (
-    <main className="pt-16 pb-24 lg:pb-10">
+    <main className="page">
       <div className="max-w-2xl mx-auto px-4 lg:px-8 mt-4">
-        <Link to="/cart" className="text-sm font-bold text-[var(--green-700)] flex items-center gap-1 mb-3">
+        <Link to="/cart" className="link-tap text-sm text-[var(--green-700)] mb-1 -ml-1">
           <ArrowLeft className="w-4 h-4" /> Back to cart
         </Link>
         <h1 className="display text-2xl font-extrabold mb-1 flex items-center gap-2">
@@ -51,30 +51,33 @@ export function CouponPage() {
         <p className="text-sm text-[var(--ink-soft)] mb-5">Tap “Apply” to use a coupon on your cart.</p>
 
         <div className="card p-4 mb-5">
+          {/* `.field` is width:100%, so as a bare flex item it claims the row and
+              squeezes Apply down to its padding. min-w-0 lets it actually give
+              way; flex-none keeps the button at its label's width. */}
           <div className="flex gap-2">
             <input
               value={code}
               onChange={(e) => setCode(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && void apply(code)}
               placeholder="Have a code?"
-              className="field"
+              className="field flex-1 min-w-0"
             />
             <button
               onClick={() => void apply(code)}
               disabled={!code.trim() || applyCoupon.isPending}
-              className={`btn btn-dark px-4 ${!code.trim() || applyCoupon.isPending ? 'opacity-50' : ''}`}
+              className={`btn btn-dark flex-none px-4 ${!code.trim() || applyCoupon.isPending ? 'opacity-50' : ''}`}
             >
               {applyCoupon.isPending ? '…' : 'Apply'}
             </button>
           </div>
-          {err && <div className="text-xs text-[var(--coral)] mt-2">{err}</div>}
+          {err && <div className="text-xs2 text-[var(--coral)] mt-2">{err}</div>}
         </div>
 
         {!user ? (
           <div className="card p-6 text-center">
             <p className="font-bold">Log in to see your offers</p>
             <p className="text-sm text-[var(--ink-soft)] mt-1">Coupons are tied to your account.</p>
-            <Link to="/login?next=/coupon" className="btn btn-primary mt-4 px-6 py-3 inline-flex">
+            <Link to="/login?next=/coupon" className="btn btn-primary mt-4 px-6 inline-flex">
               Login / Sign up
             </Link>
           </div>
@@ -97,23 +100,25 @@ export function CouponPage() {
             {(coupons ?? []).map((c) => {
               const short = subtotal < c.minSubtotal;
               return (
-                <div key={c.code} className={`card p-4 flex items-center gap-4 io ${short ? 'opacity-70' : ''}`}>
-                  <div className="w-14 h-14 rounded-xl brand-grad flex items-center justify-center text-white flex-none">
-                    <Ticket className="w-7 h-7" />
+                <div key={c.code} className={`card p-4 flex items-center gap-3 sm:gap-4 io ${short ? 'opacity-70' : ''}`}>
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl brand-grad flex items-center justify-center text-white flex-none">
+                    <Ticket className="w-6 h-6 sm:w-7 sm:h-7" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-extrabold text-lg tracking-wide">{c.code}</div>
+                    <div className="font-extrabold text-lg tracking-wide break-words">{c.code}</div>
                     <div className="text-sm text-[var(--ink-soft)]">{c.description || c.name}</div>
                     {c.minSubtotal > 0 && (
-                      <div className="text-[11px] text-[var(--ink-soft)] mt-0.5">
-                        {short ? `Add ${rupee(c.minSubtotal - subtotal)} more to use this` : `Min order ${rupee(c.minSubtotal)}`}
+                      <div className="text-xs2 text-[var(--ink-soft)] mt-0.5 tabular-nums">
+                        {short
+                          ? `Add ${rupee(c.minSubtotal - subtotal)} more to use this`
+                          : `Min order ${rupee(c.minSubtotal)}`}
                       </div>
                     )}
                   </div>
                   <button
                     onClick={() => void apply(c.code)}
                     disabled={short || !c.canBeApplied || applyCoupon.isPending}
-                    className={`btn btn-ghost px-4 py-2 text-sm font-extrabold ${short || !c.canBeApplied ? 'opacity-50' : ''}`}
+                    className={`btn btn-ghost flex-none px-4 text-sm font-extrabold ${short || !c.canBeApplied ? 'opacity-50' : ''}`}
                   >
                     Apply
                   </button>

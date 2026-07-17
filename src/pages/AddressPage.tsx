@@ -66,6 +66,9 @@ export function AddressPage() {
   const [pin, setPin] = useState<Pin | null>(null);
   const [detecting, setDetecting] = useState(false);
   const [formErr, setFormErr] = useState('');
+  /* Deleting an address can't be undone, and the button sits inside the <label>
+     that selects the card — the one place on this page a thumb is aimed. */
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) navigate(`/login?next=${encodeURIComponent(isCheckoutFlow ? '/address?mode=checkout' : '/address')}`, { replace: true });
@@ -183,8 +186,10 @@ export function AddressPage() {
     try {
       await deleteAddress.mutateAsync(id);
       if (activeAddressId === id) setActiveAddress(null);
+      setConfirmDelete(null);
       push('Address removed', '', 'trash-2');
     } catch {
+      setConfirmDelete(null);
       push('Could not remove that address', 'err', 'x');
     }
   };
@@ -192,13 +197,15 @@ export function AddressPage() {
   if (isLoading) return <DotLoader />;
 
   const list = addresses ?? [];
+  const pendingDelete = list.find((a) => a.id === confirmDelete);
 
   return (
-    <main className="pt-16 pb-28 lg:pb-10">
+    <>
+    <main className="page">
       <div className="max-w-3xl mx-auto px-4 lg:px-8 mt-4">
         <Link
           to={isCheckoutFlow ? '/cart' : '/profile'}
-          className="text-sm font-bold text-[var(--green-700)] flex items-center gap-1 mb-3"
+          className="link-tap text-sm text-[var(--green-700)] mb-1 -ml-1"
         >
           <ArrowLeft className="w-4 h-4" /> {isCheckoutFlow ? 'Back to cart' : 'Back to profile'}
         </Link>
@@ -216,30 +223,37 @@ export function AddressPage() {
             list.map((a) => {
               const deliverable = canDeliverTo(a);
               return (
-                <div
+                /* A <label> wrapping the radio, not a div with role="button"
+                   around one: the whole card selects the address, by the
+                   browser's own semantics, and it is keyboard-reachable. The
+                   old construction nested a real radio inside a fake button —
+                   focusable by neither. */
+                <label
                   key={a.id}
-                  onClick={() => deliverable && setActiveAddress(a.id)}
-                  role="button"
-                  className={`card p-4 flex gap-3 ${a.id === activeAddressId ? 'ring-2 ring-[var(--green-600)]' : ''} ${
-                    deliverable ? '' : 'opacity-70'
-                  }`}
+                  className={`card p-4 flex items-start gap-3 cursor-pointer ${
+                    a.id === activeAddressId ? 'ring-2 ring-[var(--green-600)]' : ''
+                  } ${deliverable ? '' : 'opacity-70 cursor-not-allowed'}`}
                 >
+                  {/* `items-start` above + an explicit size here. Without both,
+                      the radio stretched to the full height of the text column
+                      beside it — a 13px-wide, 124px-tall invisible hit strip
+                      running down the card. */}
                   <input
                     type="radio"
                     name="addr"
-                    className="accent-[var(--green-700)] mt-1"
+                    className="accent-[var(--green-700)] w-5 h-5 mt-0.5 shrink-0"
                     checked={a.id === activeAddressId}
                     disabled={!deliverable}
                     onChange={() => setActiveAddress(a.id)}
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-[11px] font-extrabold uppercase bg-[var(--leaf-100)] text-[var(--green-800)] px-2 py-0.5 rounded">
+                      <span className="text-micro font-extrabold uppercase bg-[var(--leaf-100)] text-[var(--green-800)] px-2 py-0.5 rounded">
                         {a.label}
                       </span>
                       <span className="font-bold text-sm truncate">{a.receiverName}</span>
                       {!deliverable && (
-                        <span className="text-[10px] font-bold text-[var(--coral)] bg-red-50 px-2 py-0.5 rounded-full">
+                        <span className="text-micro font-bold text-[var(--coral)] bg-red-50 px-2 py-0.5 rounded-full">
                           Outside delivery area
                         </span>
                       )}
@@ -247,21 +261,23 @@ export function AddressPage() {
                     <div className="text-sm text-[var(--ink-soft)] mt-1">
                       {[a.houseNo, a.street, a.city, a.pincode].filter(Boolean).join(', ')}
                     </div>
-                    {a.phone && <div className="text-[11px] text-[var(--ink-soft)] mt-0.5">{a.phone}</div>}
-                    <div className="flex gap-3 mt-2">
+                    {a.phone && <div className="text-xs2 text-[var(--ink-soft)] mt-0.5">{a.phone}</div>}
+                    <div className="flex gap-3 mt-1.5">
                       <button
+                        type="button"
                         onClick={(e) => {
+                          e.preventDefault();
                           e.stopPropagation();
-                          void onDelete(a.id);
+                          setConfirmDelete(a.id);
                         }}
-                        className="text-[11px] text-[var(--coral)] font-bold flex items-center gap-1"
+                        className="btn-danger-text btn-danger-text--flush"
                       >
-                        <Trash2 className="w-3 h-3" />
+                        <Trash2 className="w-3.5 h-3.5" />
                         Delete
                       </button>
                     </div>
                   </div>
-                </div>
+                </label>
               );
             })
           )}
@@ -270,7 +286,7 @@ export function AddressPage() {
         {!showForm && (
           <button
             onClick={() => setShowForm(true)}
-            className="btn btn-ghost w-full py-3.5 border-2 border-dashed border-[var(--green-500)]/40"
+            className="btn btn-ghost w-full border-2 border-dashed border-[var(--green-500)]/40"
           >
             <Plus className="w-5 h-5" /> Add New Address
           </button>
@@ -281,14 +297,14 @@ export function AddressPage() {
           <div className="card p-5 mt-5">
             <h3 className="font-extrabold mb-3">New Address</h3>
 
-            <button onClick={detectGPS} disabled={detecting} className="btn btn-primary py-3 w-full mb-4">
+            <button onClick={detectGPS} disabled={detecting} className="btn btn-primary w-full mb-4">
               <Navigation className={`w-5 h-5 ${detecting ? 'animate-spin' : ''}`} />
               <span>{detecting ? 'Detecting…' : 'Use Current Location'}</span>
             </button>
 
             {pin && (
               <div
-                className={`mb-4 p-3 rounded-xl text-sm ${
+                className={`mb-4 p-3 rounded-xl text-sm2 tabular-nums ${
                   pin.serviceable ? 'bg-[var(--leaf-100)] text-[var(--green-800)]' : 'bg-red-50 text-[var(--coral)]'
                 }`}
               >
@@ -305,13 +321,19 @@ export function AddressPage() {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="col-span-2">
+            {/* Was `grid-cols-2` unconditionally. At 360px that left each field
+                ~107px of usable width — a 10-digit phone number scrolls inside
+                its own box. One column until there's room for two. */}
+            <div className="grid grid-cols-1 xs:grid-cols-2 gap-3">
+              <div className="xs:col-span-2">
                 <label className="text-xs font-bold">Address label</label>
-                <div className="flex gap-2 mt-1">
+                {/* `.chip` is `flex:none` (it has to be, for the category rail),
+                    so three of them at 44px tall can't shrink to fit a 360px
+                    row — they'd overflow the card. Wrapping is the only give. */}
+                <div className="flex flex-wrap gap-2 mt-1">
                   {LABELS.map(({ label: l, Icon }) => (
                     <button key={l} type="button" onClick={() => setLabel(l)} className={`chip ${label === l ? 'active' : ''}`}>
-                      <Icon className="w-3.5 h-3.5" /> {l}
+                      <Icon className="w-4 h-4" /> {l}
                     </button>
                   ))}
                 </div>
@@ -338,7 +360,7 @@ export function AddressPage() {
                 <label className="text-xs font-bold">Landmark</label>
                 <input value={form.landmark} onChange={(e) => set('landmark', e.target.value)} className="field mt-1" />
               </div>
-              <div className="col-span-2">
+              <div className="xs:col-span-2">
                 <label className="text-xs font-bold">Street / Area*</label>
                 <input value={form.street} onChange={(e) => set('street', e.target.value)} className="field mt-1" />
               </div>
@@ -350,7 +372,7 @@ export function AddressPage() {
                 <label className="text-xs font-bold">State*</label>
                 <input value={form.state} onChange={(e) => set('state', e.target.value)} className="field mt-1" />
               </div>
-              <div className="col-span-2">
+              <div className="xs:col-span-2">
                 <label className="text-xs font-bold">Pincode (6-digit)*</label>
                 <input
                   value={form.pincode}
@@ -362,27 +384,27 @@ export function AddressPage() {
               </div>
             </div>
 
-            {formErr && <div className="text-xs text-[var(--coral)] mt-3">{formErr}</div>}
+            {formErr && <div className="text-xs2 text-[var(--coral)] mt-3">{formErr}</div>}
             <div className="flex gap-2 mt-4">
               <button
                 onClick={() => {
                   setShowForm(false);
                   setFormErr('');
                 }}
-                className="btn btn-ghost flex-1 py-3"
+                className="btn btn-ghost flex-1"
               >
                 Cancel
               </button>
               <button
                 onClick={() => void submit()}
                 disabled={!canSave || saveAddress.isPending}
-                className={`btn btn-primary flex-1 py-3 ${!canSave || saveAddress.isPending ? 'opacity-50' : ''}`}
+                className={`btn btn-primary flex-1 ${!canSave || saveAddress.isPending ? 'opacity-50' : ''}`}
               >
                 {saveAddress.isPending ? 'Saving…' : 'Save Address'}
               </button>
             </div>
-            <p className="text-[11px] text-[var(--ink-soft)] mt-2 flex items-center gap-1">
-              <Info className="w-3 h-3" /> GPS coordinates are required for delivery routing.
+            <p className="text-xs2 text-[var(--ink-soft)] mt-2 flex items-start gap-1">
+              <Info className="w-3.5 h-3.5 flex-none mt-0.5" /> GPS coordinates are required for delivery routing.
             </p>
           </div>
         )}
@@ -390,7 +412,7 @@ export function AddressPage() {
         {/* The CTA arms only on an address the store will actually deliver to —
             an out-of-zone one can be kept and viewed, just not ordered against. */}
         {isCheckoutFlow && !showForm && list.length > 0 && canDeliverTo(list.find((a) => a.id === activeAddressId)) && (
-          <button onClick={() => navigate('/payment')} className="btn btn-primary w-full mt-6 py-3.5 text-base">
+          <button onClick={() => navigate('/payment')} className="btn btn-primary w-full mt-6 text-base">
             Continue to Payment <ArrowRight className="w-4 h-4" />
           </button>
         )}
@@ -404,5 +426,39 @@ export function AddressPage() {
         )}
       </div>
     </main>
+
+    {pendingDelete && (
+      <div className="modal-back" onClick={(e) => e.target === e.currentTarget && setConfirmDelete(null)}>
+        <div className="modal-card p-5">
+          <h3 className="text-lg font-extrabold">Delete Address</h3>
+          <p className="text-sm2 text-[var(--ink-soft)] mt-3">
+            Delete this saved address? You can't undo this.
+          </p>
+          <div className="rounded-xl bg-[var(--cream)] border border-[var(--line)] p-3 mt-3">
+            <div className="text-xs2 font-extrabold uppercase text-[var(--green-800)]">{pendingDelete.label}</div>
+            <div className="text-sm2 font-bold mt-0.5">{pendingDelete.receiverName}</div>
+            <div className="text-xs2 text-[var(--ink-soft)] mt-0.5">
+              {[pendingDelete.houseNo, pendingDelete.street, pendingDelete.city, pendingDelete.pincode]
+                .filter(Boolean)
+                .join(', ')}
+            </div>
+          </div>
+          <div className="flex gap-2 mt-5">
+            <button onClick={() => setConfirmDelete(null)} className="btn btn-ghost flex-1">
+              Keep
+            </button>
+            <button
+              onClick={() => void onDelete(pendingDelete.id)}
+              disabled={deleteAddress.isPending}
+              className={`btn flex-1 text-white ${deleteAddress.isPending ? 'opacity-60' : ''}`}
+              style={{ background: 'var(--coral)' }}
+            >
+              {deleteAddress.isPending ? 'Deleting…' : 'Delete'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

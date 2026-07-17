@@ -24,15 +24,21 @@ export function BottomNav() {
   ];
 
   return (
-    <nav className="bnav lg:hidden fixed bottom-0 left-0 right-0 z-50 glass border-t border-[var(--line)] flex px-1">
-      {tabs.map(({ to, Icon, label, match }) => (
-        <Link key={label} to={to} className={match.some((m) => pathname.startsWith(m)) ? 'active' : ''}>
-          <span className="nav-ico">
-            <Icon className="w-5 h-5" />
-          </span>
-          {label}
-        </Link>
-      ))}
+    <nav
+      className="bnav lg:hidden fixed bottom-0 left-0 right-0 z-50 glass border-t border-[var(--line)] flex px-1"
+      aria-label="Main"
+    >
+      {tabs.map(({ to, Icon, label, match }) => {
+        const isActive = match.some((m) => pathname.startsWith(m));
+        return (
+          <Link key={label} to={to} className={isActive ? 'active' : ''} aria-current={isActive ? 'page' : undefined}>
+            <span className="nav-ico">
+              <Icon className="w-5 h-5" />
+            </span>
+            {label}
+          </Link>
+        );
+      })}
     </nav>
   );
 }

@@ -8,6 +8,7 @@ import { SmartImage } from '@/shared/SmartImage';
 import { useAppStore } from '@/store/appStore';
 import { useCartStore } from '@/store/cartStore';
 import { useLocationStore } from '@/store/locationStore';
+import { useActionBarHeight } from '@/hooks/useActionBarHeight';
 import { useToast } from '@/hooks/useToast';
 import { rupee } from '@/utils/fmt';
 import { computeUnitPrice, getDisplayPrice, lineIdOf, multipleGroups, singleGroups } from '@/utils/productPricing';
@@ -21,11 +22,11 @@ export function ProductPage() {
   if (isLoading) return <DotLoader />;
   if (!product) {
     return (
-      <main className="pt-16 pb-24 lg:pb-10">
+      <main className="page-bar">
         <div className="max-w-2xl mx-auto px-5 text-center py-16">
           <h1 className="display text-2xl font-extrabold">We couldn't find that item</h1>
-          <p className="text-[var(--ink-soft)] text-sm mt-2">It may have sold out or been taken off the menu.</p>
-          <Link to="/category" className="btn btn-primary mt-5 px-6 py-3 inline-flex">
+          <p className="text-[var(--ink-soft)] text-base2 mt-2">It may have sold out or been taken off the menu.</p>
+          <Link to="/category" className="btn btn-primary mt-5 px-6 inline-flex">
             Browse the menu
           </Link>
         </div>
@@ -57,6 +58,7 @@ function ProductView({ product: p }: { product: Product }) {
   );
   const [checked, setChecked] = useState<Record<number, Set<number>>>({});
   const [qty, setQty] = useState(1);
+  const barRef = useActionBarHeight();
 
   const chosen: Customization[] = useMemo(() => {
     const out: Customization[] = [];
@@ -115,20 +117,25 @@ function ProductView({ product: p }: { product: Product }) {
 
   return (
     <>
-      <main className="pt-16 pb-28 lg:pb-10">
+      <main className="page-bar">
         <div className="max-w-7xl mx-auto px-4 lg:px-8 mt-3">
-          {/* breadcrumb */}
-          <div className="text-xs text-[var(--ink-soft)] flex items-center gap-1 mb-3">
-            <Link to="/home" className="hover:text-[var(--green-700)]">
+          {/* Breadcrumb. Three segments plus a product name overflow 360px, and
+              the tail — the current item — is what got pushed off. The first two
+              are short and fixed; the name is the one that has to give, so it
+              takes the truncation and the row never wraps or overflows. */}
+          <nav aria-label="Breadcrumb" className="text-xs2 text-[var(--ink-soft)] flex items-center gap-1 mb-3 min-w-0">
+            <Link to="/home" className="hover:text-[var(--green-700)] flex-none">
               Home
             </Link>
-            <ChevronRight className="w-3 h-3" />
-            <Link to={`/category?cat=${p.catId}`} className="hover:text-[var(--green-700)]">
+            <ChevronRight className="w-3 h-3 flex-none" aria-hidden />
+            <Link to={`/category?cat=${p.catId}`} className="hover:text-[var(--green-700)] flex-none max-w-[40%] truncate">
               {p.categoryName || 'Category'}
             </Link>
-            <ChevronRight className="w-3 h-3" />
-            <span className="text-[var(--ink)] font-semibold">{p.name}</span>
-          </div>
+            <ChevronRight className="w-3 h-3 flex-none" aria-hidden />
+            <span aria-current="page" className="text-[var(--ink)] font-semibold truncate min-w-0">
+              {p.name}
+            </span>
+          </nav>
 
           <div className="flex flex-col lg:flex-row gap-6 lg:gap-10">
             {/* image */}
@@ -138,7 +145,7 @@ function ProductView({ product: p }: { product: Product }) {
                   <FoodMark type={p.foodType} />
                 </span>
                 {p.bestseller && (
-                  <span className="absolute top-3 right-3 z-10 bg-[var(--green-700)] text-white text-[11px] font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                  <span className="absolute top-3 right-3 z-10 bg-[var(--green-700)] text-white text-micro font-bold px-2 py-1 rounded-full flex items-center gap-1">
                     <Flame className="w-3 h-3" />
                     Bestseller
                   </span>
@@ -153,85 +160,126 @@ function ProductView({ product: p }: { product: Product }) {
                 <FoodMark type={p.foodType} /> <span>{p.name}</span>
               </h1>
 
-              <div className="flex items-end gap-3 mt-4">
+              {/* The unit price changes as variants are picked — tabular-nums
+                  keeps it from reflowing the badge beside it on every tap. */}
+              <div className="flex items-end gap-2.5 mt-4 flex-wrap">
                 {unpriced ? (
                   <span className="display text-2xl font-extrabold text-[var(--ink-soft)]">Price on request</span>
                 ) : (
                   <>
-                    <span className="display text-3xl font-extrabold">{rupee(unitPrice)}</span>
-                    {oldPrice != null && <span className="text-[var(--ink-soft)] line-through">{rupee(oldPrice)}</span>}
+                    <span className="display text-3xl font-extrabold tabular-nums">{rupee(unitPrice)}</span>
+                    {oldPrice != null && (
+                      <span className="text-[var(--ink-soft)] line-through tabular-nums">{rupee(oldPrice)}</span>
+                    )}
                     {discountPercent != null && discountPercent > 0 && (
-                      <span className="bg-[var(--coral)] text-white text-xs font-extrabold px-2 py-1 rounded-md">
+                      <span className="bg-[var(--coral)] text-white text-xs2 font-extrabold px-2 py-1 rounded-md tabular-nums">
                         {discountPercent}% OFF
                       </span>
                     )}
                   </>
                 )}
               </div>
-              <p className="text-xs text-[var(--ink-soft)] mt-1">
+              <p className="text-xs2 text-[var(--ink-soft)] mt-1">
                 {unpriced ? 'Contact the store for pricing on this item.' : 'Inclusive of all taxes'}
               </p>
 
-              {/* variant pickers — where this store keeps its prices */}
+              {/* Variant pickers — where this store keeps its prices, so these
+                  are the real buy controls and the price is not decoration.
+
+                  `.chip` truncates at max-width:60vw with an ellipsis, and the
+                  price is the tail of the label: at 360px a long option name
+                  ("Boneless Chicken 500g • ₹240") ellipsed away the exact thing
+                  the customer is choosing between, leaving three identical-
+                  looking chips. The name truncates on its own line; the price
+                  sits in its own flex-none span and can't be cut. */}
               {variants.map((g) => (
                 <div key={g.id} className="mt-5">
-                  <div className="text-sm font-bold mb-2">{g.name}</div>
-                  <div className="flex gap-2 flex-wrap">
+                  <div className="text-base2 font-bold mb-2">{g.name}</div>
+                  <div
+                    className="flex gap-2 flex-wrap"
+                    role="radiogroup"
+                    aria-label={g.name}
+                  >
                     {g.options.map((o) => (
                       <button
                         key={o.id}
+                        role="radio"
+                        aria-checked={picked[g.id] === o.id}
                         onClick={() => setPicked((prev) => ({ ...prev, [g.id]: o.id }))}
-                        className={`chip ${picked[g.id] === o.id ? 'active' : ''}`}
+                        className={`chip !max-w-full min-w-0 ${picked[g.id] === o.id ? 'active' : ''}`}
                       >
-                        {o.name} • {rupee(o.price)}
+                        <span className="truncate min-w-0">{o.name}</span>
+                        <span aria-hidden className="opacity-50">•</span>
+                        <span className="flex-none tabular-nums">{rupee(o.price)}</span>
                       </button>
                     ))}
                   </div>
                 </div>
               ))}
 
-              {/* optional extras */}
+              {/* optional extras — same truncation trap, same fix */}
               {extras.map((g) => (
                 <div key={g.id} className="mt-5">
-                  <div className="text-sm font-bold mb-2">
+                  <div className="text-base2 font-bold mb-2">
                     {g.name}
-                    {g.limit > 0 && <span className="text-[11px] text-[var(--ink-soft)] font-normal"> · up to {g.limit}</span>}
+                    {g.limit > 0 && (
+                      <span className="text-xs2 text-[var(--ink-soft)] font-normal"> · up to {g.limit}</span>
+                    )}
                   </div>
                   <div className="flex gap-2 flex-wrap">
-                    {g.options.map((o) => (
-                      <button
-                        key={o.id}
-                        onClick={() => toggleExtra(g.id, o.id, g.limit)}
-                        className={`chip ${checked[g.id]?.has(o.id) ? 'active' : ''}`}
-                      >
-                        {o.name} {o.price > 0 && `• +${rupee(o.price)}`}
-                      </button>
-                    ))}
+                    {g.options.map((o) => {
+                      const on = checked[g.id]?.has(o.id) ?? false;
+                      /* At the limit the unchecked options silently no-op —
+                         they looked identical to the ones still available. */
+                      const full = g.limit > 0 && !on && (checked[g.id]?.size ?? 0) >= g.limit;
+                      return (
+                        <button
+                          key={o.id}
+                          role="checkbox"
+                          aria-checked={on}
+                          disabled={full}
+                          onClick={() => toggleExtra(g.id, o.id, g.limit)}
+                          className={`chip !max-w-full min-w-0 ${on ? 'active' : ''} ${full ? 'opacity-45' : ''}`}
+                        >
+                          <span className="truncate min-w-0">{o.name}</span>
+                          {o.price > 0 && (
+                            <>
+                              <span aria-hidden className="opacity-50">•</span>
+                              <span className="flex-none tabular-nums">+{rupee(o.price)}</span>
+                            </>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               ))}
 
               {!unpriced && (
-                <div className="flex items-center gap-4 mt-6">
-                  <div className="text-sm font-bold">Quantity</div>
+                <div className="flex items-center gap-3 mt-6">
+                  <div className="text-base2 font-bold">Quantity</div>
                   <div className="stepper">
-                    <button onClick={() => setQty((n) => Math.max(1, n - 1))}>−</button>
-                    <span>{qty}</span>
-                    <button onClick={() => setQty((n) => n + 1)}>+</button>
+                    <button onClick={() => setQty((n) => Math.max(1, n - 1))} aria-label="Decrease quantity">
+                      −
+                    </button>
+                    <span aria-live="polite">{qty}</span>
+                    <button onClick={() => setQty((n) => n + 1)} aria-label="Increase quantity">
+                      +
+                    </button>
                   </div>
                   <div className="ml-auto text-right">
-                    <div className="text-[11px] text-[var(--ink-soft)]">Subtotal</div>
-                    <div className="font-extrabold">{rupee(unitPrice * qty)}</div>
+                    <div className="text-xs2 text-[var(--ink-soft)]">Subtotal</div>
+                    <div className="font-extrabold tabular-nums">{rupee(unitPrice * qty)}</div>
                   </div>
                 </div>
               )}
 
               {!unpriced && (
                 <div className="hidden lg:flex gap-3 mt-6">
-                  <button onClick={() => addToCart(false)} className="btn btn-ghost flex-1 py-3.5 text-base">
+                  <button onClick={() => addToCart(false)} className="btn btn-ghost flex-1 text-base">
                     Add to Cart
                   </button>
-                  <button onClick={() => addToCart(true)} className="btn btn-primary flex-1 py-3.5 text-base">
+                  <button onClick={() => addToCart(true)} className="btn btn-primary flex-1 text-base">
                     Buy Now <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
@@ -239,10 +287,10 @@ function ProductView({ product: p }: { product: Product }) {
 
               {/* delivery */}
               <div className="card p-4 mt-6 flex items-center gap-3">
-                <Truck className="w-6 h-6 text-[var(--green-700)]" />
-                <div className="text-sm">
+                <Truck className="w-6 h-6 text-[var(--green-700)] flex-none" />
+                <div className="text-base2 min-w-0">
                   <b>Delivery in {store?.deliveryTime ?? 30} minutes</b>
-                  <div className="text-[var(--ink-soft)] text-[12px]">
+                  <div className="text-[var(--ink-soft)] text-xs2">
                     to {area || store?.city || 'Avinashi'} • delivery charge as per km
                   </div>
                 </div>
@@ -252,22 +300,22 @@ function ProductView({ product: p }: { product: Product }) {
               <div className="grid grid-cols-3 gap-2 mt-3 text-center">
                 <div className="card p-3">
                   <Leaf className="w-5 h-5 text-[var(--green-700)] mx-auto" />
-                  <div className="text-[11px] font-bold mt-1">Quality assured</div>
+                  <div className="text-xs2 font-bold mt-1 leading-tight">Quality assured</div>
                 </div>
                 <div className="card p-3">
                   <Snowflake className="w-5 h-5 text-[var(--green-700)] mx-auto" />
-                  <div className="text-[11px] font-bold mt-1">Cold-chain</div>
+                  <div className="text-xs2 font-bold mt-1 leading-tight">Cold-chain</div>
                 </div>
                 <div className="card p-3">
                   <BadgeCheck className="w-5 h-5 text-[var(--green-700)] mx-auto" />
-                  <div className="text-[11px] font-bold mt-1">Hygienic pack</div>
+                  <div className="text-xs2 font-bold mt-1 leading-tight">Hygienic pack</div>
                 </div>
               </div>
 
               {p.desc && (
                 <div className="mt-6">
                   <h3 className="font-extrabold mb-1">About this product</h3>
-                  <p className="text-sm text-[var(--ink-soft)] leading-relaxed">{p.desc}</p>
+                  <p className="text-base2 text-[var(--ink-soft)] leading-relaxed">{p.desc}</p>
                 </div>
               )}
             </div>
@@ -278,7 +326,9 @@ function ProductView({ product: p }: { product: Product }) {
               <h2 className="display text-xl font-extrabold mb-3 flex items-center gap-2">
                 <Layers className="w-5 h-5 text-[var(--green-700)]" /> More from {p.categoryName}
               </h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              {/* 2 → 4 skipped a step: at the md breakpoint (768) four cards are
+                  ~175px each, narrower than the same card on a 360px phone. */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                 {related.map((x) => (
                   <ProductCard key={x.id} product={x} />
                 ))}
@@ -288,19 +338,25 @@ function ProductView({ product: p }: { product: Product }) {
         </div>
       </main>
 
-      {/* mobile sticky add bar */}
+      {/* mobile sticky add bar
+          Price + two buttons on one 360px line left each button ~95px — the
+          labels only just fit and neither read as the primary action. The price
+          takes its own line now, and Buy Now is visibly the main one. */}
       {!unpriced && (
-        <div className="action-bar glass border-t border-[var(--line)] px-4 py-3 lg:hidden flex items-center gap-3">
-          <div>
-            <div className="text-[11px] text-[var(--ink-soft)]">Total</div>
-            <div className="font-extrabold text-lg">{rupee(unitPrice * qty)}</div>
+        <div ref={barRef} className="action-bar glass border-t border-[var(--line)] px-4 py-2.5 lg:hidden">
+          <div className="flex items-baseline gap-2 mb-2">
+            <span className="text-micro text-[var(--ink-soft)]">Total</span>
+            <span className="font-extrabold text-lg tabular-nums">{rupee(unitPrice * qty)}</span>
+            {qty > 1 && <span className="text-micro text-[var(--ink-soft)]">for {qty}</span>}
           </div>
-          <button onClick={() => addToCart(false)} className="btn btn-ghost flex-1 py-3">
-            Add to Cart
-          </button>
-          <button onClick={() => addToCart(true)} className="btn btn-primary flex-1 py-3">
-            Buy Now
-          </button>
+          <div className="flex items-center gap-2.5">
+            <button onClick={() => addToCart(false)} className="btn btn-ghost flex-1 text-sm2">
+              Add to Cart
+            </button>
+            <button onClick={() => addToCart(true)} className="btn btn-primary flex-[1.3] text-sm2">
+              Buy Now
+            </button>
+          </div>
         </div>
       )}
     </>

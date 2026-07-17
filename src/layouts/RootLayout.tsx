@@ -18,7 +18,10 @@ function activeKey(pathname: string) {
 export function RootLayout() {
   const { pathname } = useLocation();
   return (
-    <div className="pb-24 lg:pb-0 min-h-screen">
+    /* No padding here. It used to carry `pb-24`, which every page then repeated
+       on its own <main> — 192px of reserve for 60px of nav. The page knows
+       whether it has an action bar to clear; this wrapper doesn't. */
+    <div className="min-h-dvh">
       <Header active={activeKey(pathname)} />
       <Outlet />
       <WhatsApp />

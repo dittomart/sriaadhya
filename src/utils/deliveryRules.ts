@@ -36,3 +36,13 @@ export function canDeliverTo(address: { isDeliverable: boolean } | null | undefi
   if (IGNORE_DELIVERY_RADIUS) return true;
   return !!address?.isDeliverable;
 }
+
+/** The quoted distance measured against the store's configured radius, for the
+    cart — which has the quote long before /payment has an address to check.
+    Null distance means no quote yet (guest, or still loading): unknown is not
+    out of range, so the cart stays quiet rather than blocking on a maybe. */
+export function isOutOfRange(distanceKm: number | null, radiusKm: number): boolean {
+  if (IGNORE_DELIVERY_RADIUS) return false;
+  if (distanceKm == null) return false;
+  return !isWithinRadius(distanceKm, radiusKm);
+}

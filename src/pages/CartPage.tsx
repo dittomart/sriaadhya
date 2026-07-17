@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, Lock, ShieldCheck, ShoppingCart, Ticket, Trash2, X, Zap } from 'lucide-react';
+import { ArrowRight, Lock, MapPin, ShieldCheck, ShoppingCart, Ticket, Trash2, X, Zap } from 'lucide-react';
 import { useGetCatalog } from '@/api/queries/useCatalog';
 import { ProductCard } from '@/cards/ProductCard';
 import { FoodMark } from '@/shared/FoodMark';
@@ -10,6 +10,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
 import { useCouponStore } from '@/store/couponStore';
 import { useLocationStore } from '@/store/locationStore';
+import { useActionBarHeight } from '@/hooks/useActionBarHeight';
 import { useOrderTotals } from '@/hooks/useOrderTotals';
 import { useToast } from '@/hooks/useToast';
 import { IGNORE_DELIVERY_RADIUS } from '@/utils/deliveryRules';
@@ -29,8 +30,26 @@ export function CartPage() {
   const clearCoupon = useCouponStore((s) => s.clear);
   const { data: catalog } = useGetCatalog();
 
-  const { subtotal, discount, deliveryFee, deliveryFeeKnown, distanceKm, tax, total, minOrder, belowMin } =
-    useOrderTotals();
+  const {
+    subtotal,
+    discount,
+    deliveryFee,
+    deliveryFeeKnown,
+    distanceKm,
+    outOfRange,
+    deliveryRadiusKm,
+    tax,
+    total,
+    minOrder,
+    belowMin,
+  } = useOrderTotals();
+
+  const blocked = belowMin || outOfRange;
+
+  /* This bar grows a paragraph when the address is out of range and a line when
+     the order is under the minimum — i.e. exactly when the customer is blocked
+     and most needs to read what's beneath it. Measured, not guessed. */
+  const barRef = useActionBarHeight();
 
   /* Something else from the same aisles — never an item already in the basket. */
   const alsoLike = useMemo(() => {
@@ -55,6 +74,14 @@ export function CartPage() {
       push(`Minimum order is ${rupee(minOrder)}`, 'err', 'x');
       return;
     }
+    /* The quote is against the delivery address, so this is the firmer of the
+       two checks here — and unlike the pin hint it fires before an address
+       screen the customer has no reason to fill in. */
+    if (outOfRange) {
+      push("You're outside our delivery area", 'err', 'map-pin');
+      setTimeout(() => navigate('/not-serviceable'), 900);
+      return;
+    }
     /* An early word based on the home-screen pin, so a customer out of range
        hears it before filling in an address. It is only a hint — the pin is
        where they ARE, not necessarily where they want it delivered. The gate
@@ -69,7 +96,7 @@ export function CartPage() {
 
   if (lines.length === 0) {
     return (
-      <main className="pt-16 pb-28 lg:pb-10">
+      <main className="page-bar">
         <div className="max-w-7xl mx-auto px-4 lg:px-8 mt-4">
           <h1 className="display text-2xl font-extrabold mb-4 flex items-center gap-2">
             <ShoppingCart className="w-6 h-6 text-[var(--green-700)]" /> Your Cart
@@ -77,8 +104,8 @@ export function CartPage() {
           <div className="text-center py-16">
             <div className="text-6xl mb-3">🛒</div>
             <p className="font-bold text-lg">Your cart is empty</p>
-            <p className="text-sm text-[var(--ink-soft)] mt-1">Add some fresh essentials to get started</p>
-            <Link to="/home" className="btn btn-primary mt-4 px-6 py-3 inline-flex">
+            <p className="text-base2 text-[var(--ink-soft)] mt-1">Add some fresh essentials to get started</p>
+            <Link to="/home" className="btn btn-primary mt-4 px-6 inline-flex">
               Start shopping
             </Link>
           </div>
@@ -87,15 +114,17 @@ export function CartPage() {
     );
   }
 
-  const deliveryLine = deliveryFeeKnown
-    ? rupee(deliveryFee)
-    : /* A guest can't be quoted — /get-deliverable-amount needs an account.
-         "₹0" here would read as free delivery and then surprise them. */
-      'At checkout';
+  const deliveryLine = outOfRange
+    ? 'Not deliverable'
+    : deliveryFeeKnown
+      ? rupee(deliveryFee)
+      : /* A guest can't be quoted — /get-deliverable-amount needs an account.
+           "₹0" here would read as free delivery and then surprise them. */
+        'At checkout';
 
   return (
     <>
-      <main className="pt-16 pb-28 lg:pb-10">
+      <main className="page-bar">
         <div className="max-w-7xl mx-auto px-4 lg:px-8 mt-4">
           <h1 className="display text-2xl font-extrabold mb-4 flex items-center gap-2">
             <ShoppingCart className="w-6 h-6 text-[var(--green-700)]" /> Your Cart
@@ -104,38 +133,58 @@ export function CartPage() {
           <div className="flex flex-col lg:flex-row gap-6">
             {/* items */}
             <div className="lg:w-2/3">
-              <div className="card p-3 mb-3 flex items-center gap-2 text-sm bg-[var(--leaf-100)] border-[var(--green-500)]/30">
-                <Zap className="w-4 h-4 text-[var(--green-700)]" /> <b>Delivery in {store?.deliveryTime ?? 30} min</b>{' '}
+              {/* Wraps rather than truncates: the area name comes from the pin and
+                  can be long, and "to <area>" is the half that says whether the
+                  ETA applies to where they are. */}
+              <div className="card p-3 mb-3 flex items-center gap-x-2 gap-y-0.5 flex-wrap text-sm2 bg-[var(--leaf-100)] border-[var(--green-500)]/30">
+                <Zap className="w-4 h-4 flex-none text-[var(--green-700)]" />
+                <b>Delivery in {store?.deliveryTime ?? 30} min</b>
                 <span className="text-[var(--ink-soft)]">to {location?.area || store?.city || 'Avinashi'}</span>
               </div>
               <div className="space-y-3">
                 {lines.map((it) => (
-                  <div key={it.lineId} className="card p-3 flex gap-3 items-center">
-                    <SmartImage src={it.img} alt={it.name} className="w-16 h-16 rounded-xl object-cover flex-none" />
+                  /* The row was one flex line: thumb, text, and a stepper+price
+                      column crushed against the right edge — which is what
+                      forced the 30px stepper and the 17px Remove in the first
+                      place. On a phone the controls get their own line under
+                      the name, so both can be full size. */
+                  <div key={it.lineId} className="card p-3 flex gap-3">
+                    <SmartImage
+                      src={it.img}
+                      alt={it.name}
+                      className="w-16 h-16 rounded-xl object-cover flex-none self-start"
+                    />
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <FoodMark type={it.foodType} />
-                        <span className="font-bold text-sm truncate">{it.name}</span>
+                      <div className="flex items-start gap-1.5">
+                        <span className="mt-0.5">
+                          <FoodMark type={it.foodType} />
+                        </span>
+                        <span className="font-bold text-sm2 leading-snug line-clamp-2">{it.name}</span>
                       </div>
-                      <div className="text-[12px] text-[var(--ink-soft)]">
+                      <div className="text-xs2 text-[var(--ink-soft)] mt-0.5 tabular-nums">
                         {it.customizations.map((c) => c.addonName).join(', ') || rupee(it.unitPrice)}
                         {it.customizations.length > 0 && ` • ${rupee(it.unitPrice)}`}
                       </div>
-                      <button
-                        onClick={() => remove(it.lineId)}
-                        className="text-[11px] text-[var(--coral)] font-bold mt-1 flex items-center gap-1"
-                      >
-                        <Trash2 className="w-3 h-3" />
+
+                      <div className="flex items-center gap-2 mt-2">
+                        <div className="stepper">
+                          <button onClick={() => setQty(it.lineId, it.qty - 1)} aria-label={`Reduce ${it.name}`}>
+                            −
+                          </button>
+                          <span aria-live="polite">{it.qty}</span>
+                          <button onClick={() => setQty(it.lineId, it.qty + 1)} aria-label={`Add another ${it.name}`}>
+                            +
+                          </button>
+                        </div>
+                        <span className="font-extrabold text-base tabular-nums ml-auto">
+                          {rupee(it.unitPrice * it.qty)}
+                        </span>
+                      </div>
+
+                      <button onClick={() => remove(it.lineId)} className="btn-danger-text btn-danger-text--flush mt-0.5">
+                        <Trash2 className="w-3.5 h-3.5" />
                         Remove
                       </button>
-                    </div>
-                    <div className="text-right">
-                      <div className="stepper mb-1">
-                        <button onClick={() => setQty(it.lineId, it.qty - 1)}>−</button>
-                        <span>{it.qty}</span>
-                        <button onClick={() => setQty(it.lineId, it.qty + 1)}>+</button>
-                      </div>
-                      <div className="font-extrabold text-sm">{rupee(it.unitPrice * it.qty)}</div>
                     </div>
                   </div>
                 ))}
@@ -164,24 +213,24 @@ export function CartPage() {
                     <div className="flex items-center gap-2 bg-[var(--leaf-100)] border border-[var(--green-500)]/40 rounded-xl p-3">
                       <Ticket className="w-4 h-4 text-[var(--green-700)] flex-none" />
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-extrabold truncate">{coupon.code}</div>
-                        <div className="text-[11px] text-[var(--ink-soft)] truncate">{coupon.description}</div>
+                        <div className="text-sm2 font-extrabold truncate">{coupon.code}</div>
+                        <div className="text-xs2 text-[var(--ink-soft)] truncate">{coupon.description}</div>
                       </div>
                       <button
                         onClick={() => {
                           clearCoupon();
                           push('Coupon removed', '', 'x');
                         }}
-                        className="w-7 h-7 rounded-lg bg-white flex items-center justify-center flex-none"
+                        className="icon-btn bg-white"
                         aria-label="Remove coupon"
                       >
-                        <X className="w-3.5 h-3.5" />
+                        <X className="w-4 h-4" />
                       </button>
                     </div>
                   ) : (
                     <Link
                       to="/coupon"
-                      className="flex items-center gap-2 border border-dashed border-[var(--green-500)]/50 rounded-xl p-3 text-sm font-bold text-[var(--green-700)]"
+                      className="flex items-center gap-2 border border-dashed border-[var(--green-500)]/50 rounded-xl p-3 min-h-[var(--tap)] text-sm2 font-bold text-[var(--green-700)]"
                     >
                       <Ticket className="w-4 h-4" /> Apply a coupon
                       <ArrowRight className="w-4 h-4 ml-auto" />
@@ -189,52 +238,72 @@ export function CartPage() {
                   )}
                 </div>
 
-                <div className="space-y-2 text-sm border-t border-[var(--line)] pt-3">
-                  <div className="flex justify-between">
+                <div className="space-y-2 text-sm2 border-t border-[var(--line)] pt-3">
+                  <div className="flex justify-between gap-3">
                     <span className="text-[var(--ink-soft)]">Item total</span>
-                    <span>{rupee(subtotal)}</span>
+                    <span className="tabular-nums">{rupee(subtotal)}</span>
                   </div>
                   {discount > 0 && (
-                    <div className="flex justify-between">
+                    <div className="flex justify-between gap-3">
                       <span className="text-[var(--green-700)]">Coupon discount</span>
-                      <span className="text-[var(--green-700)]">− {rupee(discount)}</span>
+                      <span className="text-[var(--green-700)] tabular-nums">− {rupee(discount)}</span>
                     </div>
                   )}
-                  <div className="flex justify-between">
+                  <div className="flex justify-between gap-3">
                     <span className="text-[var(--ink-soft)]">
                       Delivery{distanceKm != null && ` (${distanceKm.toFixed(1)} km)`}
                     </span>
-                    <span>{deliveryLine}</span>
+                    <span className={`tabular-nums text-right ${outOfRange ? 'text-[var(--coral)] font-bold' : ''}`}>
+                      {deliveryLine}
+                    </span>
                   </div>
                   {tax > 0 && (
-                    <div className="flex justify-between">
+                    <div className="flex justify-between gap-3">
                       <span className="text-[var(--ink-soft)]">Taxes &amp; charges</span>
-                      <span>{rupee(tax)}</span>
+                      <span className="tabular-nums">{rupee(tax)}</span>
                     </div>
                   )}
-                  <div className="flex justify-between font-extrabold text-lg border-t border-[var(--line)] pt-2 mt-1">
+                  <div className="flex justify-between gap-3 font-extrabold text-lg border-t border-[var(--line)] pt-2 mt-1">
                     <span>To Pay</span>
-                    <span className="text-[var(--green-800)]">{rupee(total)}</span>
+                    <span className="text-[var(--green-800)] tabular-nums">{rupee(total)}</span>
                   </div>
                   {discount > 0 && (
-                    <div className="text-xs text-[var(--green-700)] font-bold">
-                      🎉 You saved {rupee(discount)} on this order
+                    <div className="text-xs2 text-[var(--green-700)] font-bold">
+                      🎉 You saved <span className="tabular-nums">{rupee(discount)}</span> on this order
                     </div>
                   )}
                 </div>
 
+                {outOfRange && (
+                  <div className="mt-3 rounded-xl border border-[var(--coral)]/40 bg-[var(--coral)]/8 p-3 flex gap-2">
+                    <MapPin className="w-4 h-4 text-[var(--coral)] flex-none mt-0.5" />
+                    <div className="text-xs2">
+                      <p className="font-extrabold text-[var(--coral)]">This address is outside our delivery area</p>
+                      <p className="text-[var(--ink-soft)] mt-0.5">
+                        We deliver up to {deliveryRadiusKm} km from the store
+                        {distanceKm != null && `, and this address is ${distanceKm.toFixed(1)} km away`}. Pick a closer
+                        address to place this order.
+                      </p>
+                      <Link to="/address" className="link-tap text-xs2 text-[var(--green-700)] -ml-1">
+                        Change address <ArrowRight className="w-3.5 h-3.5" />
+                      </Link>
+                    </div>
+                  </div>
+                )}
+
                 {belowMin && (
-                  <p className="text-xs text-[var(--coral)] font-semibold mt-3">
-                    Add {rupee(minOrder - subtotal)} more to reach the {rupee(minOrder)} minimum order.
+                  <p className="text-xs2 text-[var(--coral)] font-semibold mt-3">
+                    Add <span className="tabular-nums">{rupee(minOrder - subtotal)}</span> more to reach the{' '}
+                    <span className="tabular-nums">{rupee(minOrder)}</span> minimum order.
                   </p>
                 )}
 
                 <div className="hidden lg:block">
-                  <button onClick={proceed} disabled={belowMin} className={`btn btn-primary w-full mt-4 py-3.5 text-base ${belowMin ? 'opacity-50' : ''}`}>
+                  <button onClick={proceed} disabled={blocked} className={`btn btn-primary w-full mt-4 text-base ${blocked ? 'opacity-50' : ''}`}>
                     Proceed to checkout <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
-                <div className="flex items-center justify-center gap-3 mt-3 text-[11px] text-[var(--ink-soft)]">
+                <div className="flex items-center justify-center gap-3 mt-3 text-micro text-[var(--ink-soft)]">
                   <span className="flex items-center gap-1">
                     <Lock className="w-3 h-3" /> Secure
                   </span>
@@ -249,18 +318,30 @@ export function CartPage() {
       </main>
 
       {/* mobile sticky checkout */}
-      <div className="action-bar glass border-t border-[var(--line)] px-4 py-3 lg:hidden">
+      <div ref={barRef} className="action-bar glass border-t border-[var(--line)] px-4 py-3 lg:hidden">
+        {outOfRange && (
+          <p className="text-xs2 text-[var(--coral)] font-semibold mb-2 flex items-start gap-1.5">
+            <MapPin className="w-3.5 h-3.5 flex-none mt-0.5" />
+            <span>
+              Outside our delivery area — we deliver up to {deliveryRadiusKm} km
+              {distanceKm != null && `, this address is ${distanceKm.toFixed(1)} km away`}.{' '}
+              <Link to="/address" className="text-[var(--green-700)] underline font-bold">
+                Change address
+              </Link>
+            </span>
+          </p>
+        )}
         {belowMin && (
-          <p className="text-[11px] text-[var(--coral)] font-semibold mb-2">
+          <p className="text-xs2 text-[var(--coral)] font-semibold mb-2">
             Add {rupee(minOrder - subtotal)} more to reach the {rupee(minOrder)} minimum.
           </p>
         )}
         <div className="flex items-center gap-3">
-          <div>
-            <div className="text-[11px] text-[var(--ink-soft)]">To Pay</div>
-            <div className="font-extrabold text-lg">{rupee(total)}</div>
+          <div className="shrink-0">
+            <div className="text-micro text-[var(--ink-soft)] leading-none">To Pay</div>
+            <div className="font-extrabold text-lg tabular-nums leading-tight">{rupee(total)}</div>
           </div>
-          <button onClick={proceed} disabled={belowMin} className={`btn btn-primary flex-1 py-3 ${belowMin ? 'opacity-50' : ''}`}>
+          <button onClick={proceed} disabled={blocked} className={`btn btn-primary flex-1 ${blocked ? 'opacity-50' : ''}`}>
             Checkout <ArrowRight className="w-4 h-4" />
           </button>
         </div>

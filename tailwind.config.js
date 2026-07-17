@@ -3,8 +3,11 @@ export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
     extend: {
-      // xs:420px — declared in every HTML file's inline tailwind.config
-      screens: { xs: '420px' },
+      /* `xs` was 420px, which is wider than most phones — every `xs:` rule was
+         dead on a 360/375px handset, silently deleting content (the header's
+         address text) rather than adapting it. 380px is the real divide: below
+         it sits the 360px Android floor, above it the 390-430px iPhones. */
+      screens: { xs: '380px' },
       // Exact palette from HTML/assets/css/styles.css :root
       colors: {
         brand: {
@@ -31,6 +34,19 @@ export default {
       fontFamily: {
         sans: ['Poppins', 'Plus Jakarta Sans', 'sans-serif'],
         display: ['Poppins', 'Bricolage Grotesque', 'sans-serif'],
+      },
+      /* The mobile type floor, as real utilities. Ad-hoc `text-[10px]` and
+         `text-[11px]` were scattered over prices, weights, nav labels and the
+         "Deliver to" line — none of it legible at arm's length. Named steps so
+         the floor is something you pick, not something you remember.
+         (`text-[var(--fs-*)]` can't work: Tailwind reads a bare var() in
+         `text-` as a colour and emits `color`, silently killing the size.) */
+      fontSize: {
+        micro: ['11px', { lineHeight: '1.25' }], // badges only, never a sentence
+        xs2: ['12px', { lineHeight: '1.35' }], // secondary labels — the real floor
+        sm2: ['13px', { lineHeight: '1.4' }],
+        base2: ['14px', { lineHeight: '1.5' }], // body on mobile
+        md2: ['16px', { lineHeight: '1.5' }], // inputs — under this iOS zooms on focus
       },
       borderRadius: { DEFAULT: '16px' },
       boxShadow: {

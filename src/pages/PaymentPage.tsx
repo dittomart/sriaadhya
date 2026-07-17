@@ -11,6 +11,7 @@ import { useAppStore } from '@/store/appStore';
 import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
 import { useCouponStore } from '@/store/couponStore';
+import { useActionBarHeight } from '@/hooks/useActionBarHeight';
 import { useOrderTotals } from '@/hooks/useOrderTotals';
 import { useToast } from '@/hooks/useToast';
 import { canDeliverTo } from '@/utils/deliveryRules';
@@ -62,6 +63,9 @@ export function PaymentPage() {
       alive.current = false;
     };
   }, []);
+
+  /* Above the early returns below — hooks can't sit after a conditional exit. */
+  const barRef = useActionBarHeight();
 
   useEffect(() => {
     if (!user || !authToken) navigate('/login?next=/payment', { replace: true });
@@ -220,9 +224,9 @@ export function PaymentPage() {
 
   return (
     <>
-      <main className="pt-16 pb-28 lg:pb-10">
+      <main className="page-bar">
         <div className="max-w-4xl mx-auto px-4 lg:px-8 mt-4">
-          <Link to="/address?mode=checkout" className="text-sm font-bold text-[var(--green-700)] flex items-center gap-1 mb-3">
+          <Link to="/address?mode=checkout" className="link-tap text-sm text-[var(--green-700)] mb-1 -ml-1">
             <ArrowLeft className="w-4 h-4" /> Back to address
           </Link>
           <h1 className="display text-2xl font-extrabold mb-4 flex items-center gap-2">
@@ -316,19 +320,26 @@ export function PaymentPage() {
                 <h3 className="font-extrabold mb-3">Order Summary</h3>
 
                 {addr ? (
-                  <div className="text-[12px] text-[var(--ink-soft)] mb-3">
+                  <div className="text-xs2 text-[var(--ink-soft)] mb-3">
                     <div className="flex gap-2">
-                      <MapPin className="w-4 h-4 text-[var(--green-700)] flex-none" />
-                      <span className="flex-1">
-                        <b className="text-[var(--ink)]">Delivering to {addr.label}</b>
-                        <Link to="/address?mode=checkout" className="ml-2 font-bold text-[var(--green-700)]">
-                          Change
-                        </Link>
+                      <MapPin className="w-4 h-4 text-[var(--green-700)] flex-none mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start gap-2">
+                          <b className="text-[var(--ink)] flex-1">Delivering to {addr.label}</b>
+                          {/* Was a 49x17 word mid-sentence — the one control for
+                              fixing a wrong address at the last step before pay. */}
+                          <Link
+                            to="/address?mode=checkout"
+                            className="link-tap text-xs2 text-[var(--green-700)] shrink-0 -mt-2.5 -mr-1"
+                          >
+                            Change
+                          </Link>
+                        </div>
                         <span className="block">{addr.receiverName}</span>
                         <span className="block">
                           {[addr.houseNo, addr.street, addr.city, addr.pincode].filter(Boolean).join(', ')}
                         </span>
-                      </span>
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -372,10 +383,13 @@ export function PaymentPage() {
                   )}
                 </div>
 
+                {/* Desktop keeps the CTA in the sticky summary column. On a
+                    phone that column stacks *below* the gateway list, so the
+                    button sat far under the fold — see the sticky bar below. */}
                 <button
                   onClick={() => void onPay()}
                   disabled={placing || placeOrder.isPending || (!effectiveMethod && !walletCoversAll)}
-                  className={`btn btn-primary w-full mt-4 py-3.5 text-base ${
+                  className={`btn btn-primary w-full mt-4 py-3.5 text-base hidden lg:inline-flex ${
                     placing || placeOrder.isPending ? 'opacity-60' : ''
                   }`}
                 >
@@ -386,6 +400,28 @@ export function PaymentPage() {
           </div>
         </div>
       </main>
+
+      {/* mobile sticky pay bar — Cart and Product both have one; the step that
+          actually takes the money was the only one without. */}
+      <div ref={barRef} className="action-bar glass border-t border-[var(--line)] px-4 py-2.5 lg:hidden">
+        <div className="flex items-center gap-3">
+          <div className="shrink-0">
+            <div className="text-micro text-[var(--ink-soft)] leading-none">To Pay</div>
+            {/* What the gateway will actually charge — the wallet has already
+                come off. `total` here would contradict the button beside it. */}
+            <div className="font-extrabold text-lg tabular-nums leading-tight">{rupee(amountAfterWallet)}</div>
+          </div>
+          <button
+            onClick={() => void onPay()}
+            disabled={placing || placeOrder.isPending || (!effectiveMethod && !walletCoversAll)}
+            className={`btn btn-primary flex-1 text-sm2 ${
+              placing || placeOrder.isPending || (!effectiveMethod && !walletCoversAll) ? 'opacity-60' : ''
+            }`}
+          >
+            {placing || placeOrder.isPending ? 'Placing…' : walletCoversAll ? 'Pay with Wallet' : 'Pay Securely'}
+          </button>
+        </div>
+      </div>
       {storeClosed && <StoreHoursModal onClose={() => setStoreClosed(false)} />}
     </>
   );

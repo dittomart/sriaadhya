@@ -45,13 +45,13 @@ export function ProductCard({ product: p }: { product: Product }) {
     <div className="pcard card-glow flex flex-col relative no-tap">
       <div className="pcard-media">
         {p.bestseller && (
-          <span className="absolute top-2 left-2 bg-[var(--green-700)] text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 z-10">
+          <span className="absolute top-2 left-2 bg-[var(--green-700)] text-white text-micro font-bold px-2 py-0.5 rounded-full flex items-center gap-1 z-10">
             <Flame className="w-3 h-3" />
             Bestseller
           </span>
         )}
         {discountPercent != null && discountPercent > 0 && (
-          <span className="absolute top-2 right-2 bg-[var(--coral)] text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-md z-10 shadow">
+          <span className="absolute top-2 right-2 bg-[var(--coral)] text-white text-micro font-extrabold px-1.5 py-0.5 rounded-md z-10 shadow">
             {discountPercent}% OFF
           </span>
         )}
@@ -71,29 +71,38 @@ export function ProductCard({ product: p }: { product: Product }) {
       <div className="px-3.5 pt-5 pb-3.5 flex flex-col flex-1">
         <div className="flex items-center gap-1.5 mb-1">
           <FoodMark type={p.foodType} />
-          <span className="text-[10px] text-[var(--ink-soft)] font-semibold uppercase tracking-wide truncate">
+          <span className="text-micro text-[var(--ink-soft)] font-semibold uppercase tracking-wide truncate">
             {p.categoryName}
           </span>
         </div>
+        {/* The card's main target. `min-h-[34px]` sized it to exactly two lines
+            of 13px and no more — a 34px tap area on the one thing that opens the
+            product. Padded to clear 44 without changing where the text sits. */}
         <Link
           to={`/product/${p.id}`}
-          className="font-bold text-[13px] leading-tight clamp-2 min-h-[34px] hover:text-[var(--green-700)] transition-colors"
+          className="font-bold text-sm2 leading-tight clamp-2 min-h-[44px] py-0.5 hover:text-[var(--green-700)] transition-colors"
         >
           {p.name}
         </Link>
         <div className="flex items-end gap-1.5 mt-auto pt-2.5">
           {unpriced ? (
-            <span className="text-[12px] font-bold text-[var(--ink-soft)] leading-none">Price on request</span>
+            <span className="text-xs2 font-bold text-[var(--ink-soft)] leading-none">Price on request</span>
           ) : (
             <>
-              <span className="font-extrabold text-[17px] text-[var(--ink)] leading-none">{rupee(price)}</span>
+              <span className="font-extrabold text-[17px] text-[var(--ink)] leading-none tabular-nums">
+                {rupee(price)}
+              </span>
               {oldPrice != null && (
-                <span className="text-[11px] text-[var(--ink-soft)] line-through">{rupee(oldPrice)}</span>
+                <span className="text-micro text-[var(--ink-soft)] line-through tabular-nums">{rupee(oldPrice)}</span>
               )}
             </>
           )}
+          {/* The pack size. A grocery shopper cannot compare ₹120 against ₹300
+              without it, and it was the smallest thing on the card. */}
           {variants[0]?.options[0] && (
-            <span className="text-[10px] text-[var(--ink-soft)] ml-auto">{variants[0].options[0].name}</span>
+            <span className="text-xs2 font-semibold text-[var(--ink-soft)] ml-auto shrink-0">
+              {variants[0].options[0].name}
+            </span>
           )}
         </div>
       </div>

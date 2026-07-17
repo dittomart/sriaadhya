@@ -14,7 +14,7 @@ export function PaymentFailedPage() {
 
   return (
     <>
-      <div className="min-h-screen flex items-center justify-center px-6 bg-[var(--cream)]">
+      <div className="min-h-dvh flex items-center justify-center px-6 py-10 bg-[var(--cream)]">
         <div className="max-w-md w-full text-center" style={{ animation: 'fadeUp .5s ease' }}>
           <div
             className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-5 ${
@@ -38,13 +38,13 @@ export function PaymentFailedPage() {
 
           <div className="flex flex-col gap-3 mt-6">
             <button onClick={() => navigate('/payment')} className="btn btn-primary w-full py-3.5">
-              <RefreshCw className="w-4 h-4" /> Retry Payment
+              <RefreshCw className="w-4 h-4 flex-none" /> Retry Payment
             </button>
-            <button onClick={() => navigate('/cart')} className="btn btn-ghost w-full py-3">
+            <button onClick={() => navigate('/cart')} className="btn btn-ghost w-full">
               Back to Cart
             </button>
             {storeClosed && (
-              <button onClick={() => setHoursOpen(true)} className="btn btn-ghost w-full py-3">
+              <button onClick={() => setHoursOpen(true)} className="btn btn-ghost w-full">
                 View Store Hours
               </button>
             )}

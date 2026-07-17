@@ -105,7 +105,7 @@ export function PaymentProcessingPage() {
   // PhonePe: a tap-to-open card, so this page survives to be come back to.
   if (phonePeUrl) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-6 bg-[var(--cream)]">
+      <div className="min-h-dvh flex items-center justify-center px-6 py-10 bg-[var(--cream)]">
         <div className="text-center max-w-sm">
           <div className="w-20 h-20 rounded-2xl bg-[var(--leaf-100)] flex items-center justify-center mx-auto">
             <ShieldCheck className="w-10 h-10 text-[var(--green-700)]" />
@@ -118,15 +118,17 @@ export function PaymentProcessingPage() {
             onClick={() => window.open(phonePeUrl, '_blank', 'noopener')}
             className="btn btn-primary w-full mt-6 py-3.5 text-base"
           >
-            Pay with PhonePe <ExternalLink className="w-4 h-4" />
+            Pay with PhonePe <ExternalLink className="w-4 h-4 flex-none" />
           </button>
           <button
             onClick={() => navigate(uniqueOrderId ? `/view-order/${uniqueOrderId}` : '/my-orders', { replace: true })}
-            className="btn btn-ghost w-full mt-3 py-3"
+            className="btn btn-ghost w-full mt-3"
           >
             View my order
           </button>
-          <p className="text-[11px] text-[var(--ink-soft)] mt-4">
+          {/* Reassurance for someone who paid but landed back here — the one
+              line that stops a duplicate payment. */}
+          <p className="text-xs2 text-[var(--ink-soft)] mt-4">
             Paid already? Your order updates on its own — open it any time from My Orders.
           </p>
         </div>
@@ -135,7 +137,7 @@ export function PaymentProcessingPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-6 bg-[var(--cream)]">
+    <div className="min-h-dvh flex items-center justify-center px-6 py-10 bg-[var(--cream)]">
       <div className="text-center max-w-sm">
         <div className="relative w-32 h-32 mx-auto">
           <div className="splash-ring absolute inset-0" style={{ width: '100%', height: '100%' }} />
@@ -145,8 +147,8 @@ export function PaymentProcessingPage() {
         </div>
         <h1 className="display text-xl font-extrabold mt-6">Processing your payment…</h1>
         <p className="text-sm text-[var(--ink-soft)] mt-2">{STEPS[step]}</p>
-        <div className="flex items-center justify-center gap-2 mt-5 text-[12px] text-[var(--ink-soft)]">
-          <Lock className="w-3.5 h-3.5" /> Do not press back or refresh
+        <div className="flex items-center justify-center gap-2 mt-5 text-xs2 text-[var(--ink-soft)]">
+          <Lock className="w-3.5 h-3.5 flex-none" /> Do not press back or refresh
         </div>
       </div>
     </div>

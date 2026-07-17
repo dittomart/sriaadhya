@@ -38,8 +38,12 @@ export function Header({ active = '', showCheckoutMode = false }: { active?: Nav
   return (
     <header className="site-header glass" style={{ borderBottom: '1px solid var(--line)' }}>
       <div className="max-w-7xl mx-auto px-3 md:px-4 lg:px-8">
-        <div className="flex items-center gap-2 lg:gap-3 h-16">
-          <Link to="/home" className="flex items-center flex-none no-tap" title={brand?.name ?? 'SRI AADHYA'}>
+        <div className="flex items-center gap-1.5 lg:gap-3 h-16">
+          <Link
+            to="/home"
+            className="flex items-center flex-none no-tap h-11 py-1.5"
+            title={brand?.name ?? 'SRI AADHYA'}
+          >
             <img
               src={brand?.logo || '/images/logo.png'}
               alt={brand?.name ?? 'SRI AADHYA FROZENS'}
@@ -47,13 +51,22 @@ export function Header({ active = '', showCheckoutMode = false }: { active?: Nav
             />
           </Link>
 
-          <Link to="/location" className="flex items-center gap-1 text-left ml-1 no-tap flex-none max-w-[140px]">
+          {/* The address, not the logo, is what a grocery customer checks first —
+              wrong area means every price and ETA on the page is a lie. It used
+              to collapse to a bare 16px pin on any phone under 420px, label and
+              area name simply `display:none`. It now always renders its text and
+              takes the room it needs. */}
+          <Link
+            to="/location"
+            className="flex items-center gap-1 text-left no-tap min-w-0 flex-1 md:flex-none md:max-w-[180px] h-11 px-1 rounded-xl active:bg-[var(--cream-2)] transition-colors"
+            aria-label={`Delivering to ${area}. Change location`}
+          >
             <MapPin className="w-4 h-4 text-[var(--green-700)] shrink-0" />
-            <span className="hidden xs:block text-xs min-w-0">
-              <span className="block text-[10px] text-[var(--ink-soft)] leading-none">Deliver to</span>
-              <span className="font-bold text-[var(--ink)] leading-none flex items-center gap-0.5">
+            <span className="min-w-0 leading-tight">
+              <span className="block text-micro text-[var(--ink-soft)] leading-none">Deliver to</span>
+              <span className="font-bold text-[var(--ink)] text-sm2 leading-tight flex items-center gap-0.5">
                 <span className="truncate">{area}</span>
-                <ChevronDown className="w-3 h-3 shrink-0" />
+                <ChevronDown className="w-3.5 h-3.5 shrink-0" />
               </span>
             </span>
           </Link>
@@ -66,7 +79,7 @@ export function Header({ active = '', showCheckoutMode = false }: { active?: Nav
                 onChange={(e) => setQ(e.target.value)}
                 onKeyDown={submitSearch}
                 placeholder="Search mushrooms, paneer, samosa…"
-                className="flex-1 bg-transparent outline-none text-sm px-2 min-w-0"
+                className="flex-1 h-full bg-transparent outline-none text-md2 px-2 min-w-0"
               />
             </div>
           )}
@@ -83,23 +96,38 @@ export function Header({ active = '', showCheckoutMode = false }: { active?: Nav
             </Link>
           </nav>
 
+          {/* Below md the search box above is gone, so this is the only way to
+              search — previously there was none at all on a phone, in an app
+              whose whole job is finding an item. */}
+          {!showCheckoutMode && (
+            <Link
+              to="/category"
+              className="md:hidden icon-btn bg-[var(--cream-2)] ml-auto"
+              aria-label="Search products"
+            >
+              <Search className="w-5 h-5 text-[var(--green-800)]" />
+            </Link>
+          )}
+
           <Link
             to={user ? '/profile' : '/login'}
-            className="ml-auto md:ml-1 w-10 h-10 rounded-xl bg-[var(--cream-2)] flex items-center justify-center flex-none no-tap"
-            title="Profile"
+            className={`icon-btn bg-[var(--cream-2)] ${showCheckoutMode ? 'ml-auto' : 'md:ml-auto'}`}
+            aria-label={user ? 'Your profile' : 'Log in'}
           >
             <User className="w-5 h-5 text-[var(--green-800)]" />
           </Link>
           <Link
             ref={cartRef}
             to="/cart"
-            className="relative w-10 h-10 rounded-xl bg-[var(--green-700)] flex items-center justify-center flex-none no-tap"
-            title="Cart"
+            className="relative icon-btn bg-[var(--green-700)]"
+            aria-label={count > 0 ? `Cart, ${count} item${count === 1 ? '' : 's'}` : 'Cart, empty'}
           >
             <ShoppingCart className="w-5 h-5 text-white" />
             {count > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 bg-[var(--mustard)] text-[#3a2e00] text-[10px] font-extrabold w-5 h-5 rounded-full flex items-center justify-center">
-                {count}
+              /* Was -top-1.5 -right-1.5 on a 40px box: the badge hung outside the
+                 button and clipped against the header edge. Tucked inside now. */
+              <span className="absolute top-0.5 right-0.5 bg-[var(--mustard)] text-[#3a2e00] text-micro font-extrabold min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center tabular-nums">
+                {count > 99 ? '99+' : count}
               </span>
             )}
           </Link>

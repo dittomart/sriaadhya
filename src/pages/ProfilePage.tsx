@@ -77,7 +77,7 @@ export function ProfilePage() {
 
   return (
     <>
-      <main className="pt-16 pb-24 lg:pb-10">
+      <main className="page">
         <div className="max-w-2xl mx-auto px-4 lg:px-8 mt-4">
           {/* ===== HERO ===== */}
           <div className="hero-wave text-white p-6 relative rise">
@@ -95,8 +95,8 @@ export function ProfilePage() {
                 <div className="text-xl font-extrabold display truncate">{user?.name || 'Guest User'}</div>
                 <div className="text-sm text-white/85 truncate">{user?.phone || 'Not logged in'}</div>
                 {user && (
-                  <span className="inline-flex items-center gap-1 mt-2 text-[11px] font-bold bg-white/20 border border-white/25 px-2.5 py-1 rounded-full">
-                    <BadgeCheck className="w-3.5 h-3.5" /> {brand?.name ?? 'SRIAADHYA'} Member
+                  <span className="inline-flex items-center gap-1 mt-2 text-micro font-bold bg-white/20 border border-white/25 px-2.5 py-1 rounded-full">
+                    <BadgeCheck className="w-3.5 h-3.5 flex-none" /> {brand?.name ?? 'SRIAADHYA'} Member
                   </span>
                 )}
               </div>
@@ -107,13 +107,13 @@ export function ProfilePage() {
           <div className="grid grid-cols-2 gap-3 -mt-6 relative z-10">
             <div className="card stat-card p-3.5 text-center rise d1">
               <Wallet className="ic w-6 h-6 text-[var(--green-700)] mx-auto" />
-              <div className="font-extrabold text-lg mt-1">{rupee(wallet?.balance ?? 0)}</div>
-              <div className="text-[11px] text-[var(--ink-soft)]">Wallet</div>
+              <div className="font-extrabold text-lg mt-1 tabular-nums">{rupee(wallet?.balance ?? 0)}</div>
+              <div className="text-xs2 text-[var(--ink-soft)]">Wallet</div>
             </div>
             <div className="card stat-card p-3.5 text-center rise d2">
               <Package className="ic w-6 h-6 text-[var(--green-700)] mx-auto" />
-              <div className="font-extrabold text-lg mt-1">{orders.length}</div>
-              <div className="text-[11px] text-[var(--ink-soft)]">Orders</div>
+              <div className="font-extrabold text-lg mt-1 tabular-nums">{orders.length}</div>
+              <div className="text-xs2 text-[var(--ink-soft)]">Orders</div>
             </div>
           </div>
 
@@ -205,23 +205,23 @@ export function ProfilePage() {
 
           {user ? (
             <>
-              <button onClick={onLogout} className="btn btn-ghost w-full mt-5 py-3.5">
+              <button onClick={onLogout} className="btn btn-ghost w-full mt-5">
                 <LogOut className="w-4 h-4" /> Logout
               </button>
               <button
                 onClick={() => setConfirmDelete(true)}
-                className="w-full mt-3 py-3 text-sm font-bold text-[var(--coral)] flex items-center justify-center gap-2"
+                className="btn-danger-text w-full mt-3 justify-center"
               >
                 <Trash2 className="w-4 h-4" /> Delete Account
               </button>
             </>
           ) : (
-            <Link to="/login?next=/profile" className="btn btn-primary w-full mt-5 py-3.5">
+            <Link to="/login?next=/profile" className="btn btn-primary w-full mt-5">
               <LogIn className="w-4 h-4" /> Login / Sign up
             </Link>
           )}
 
-          <p className="text-center text-[11px] text-[var(--ink-soft)] mt-4">
+          <p className="text-center text-xs2 text-[var(--ink-soft)] mt-4">
             SRI AADHYA FROZENS • Freshness Frozen, Goodness Preserved
           </p>
         </div>
@@ -239,13 +239,13 @@ export function ProfilePage() {
               Once you delete your account, you will lose all the details saved in {brand?.name ?? 'SRIAADHYA'}.
             </p>
             <div className="flex gap-2 mt-5">
-              <button onClick={() => setConfirmDelete(false)} className="btn btn-ghost flex-1 py-3">
+              <button onClick={() => setConfirmDelete(false)} className="btn btn-ghost flex-1">
                 No
               </button>
               <button
                 onClick={() => void onDelete()}
                 disabled={deleteAccount.isPending}
-                className={`btn flex-1 py-3 text-white ${deleteAccount.isPending ? 'opacity-60' : ''}`}
+                className={`btn flex-1 text-white ${deleteAccount.isPending ? 'opacity-60' : ''}`}
                 style={{ background: 'var(--coral)' }}
               >
                 {deleteAccount.isPending ? 'Deleting…' : 'Yes'}

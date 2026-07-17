@@ -20,9 +20,9 @@ export function PolicyPage() {
   const html = policies?.[entry.key] ?? null;
 
   return (
-    <main className="pt-16 pb-24 lg:pb-10">
+    <main className="page">
       <div className="max-w-3xl mx-auto px-4 lg:px-8 mt-4">
-        <Link to="/profile" className="text-sm font-bold text-[var(--green-700)] flex items-center gap-1 mb-3">
+        <Link to="/profile" className="link-tap text-sm text-[var(--green-700)] mb-1 -ml-1">
           <ArrowLeft className="w-4 h-4" /> Back
         </Link>
         <h1 className="display text-2xl font-extrabold mb-4">{entry.title}</h1>
@@ -30,9 +30,22 @@ export function PolicyPage() {
         {isLoading ? (
           <DotLoader />
         ) : html ? (
-          <div className="card p-5">
+          <div className="card p-5 overflow-hidden">
             {/* already sanitized inside useGetBrandPolicies — never re-run it here */}
-            <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: html }} />
+            {/* This is admin-authored HTML with no width contract: a pasted
+                table, a long support URL or a code block will all exceed 360px.
+                body{overflow-x:hidden} only hid the overflow — the text was
+                still amputated at the viewport edge. Wide block children get
+                their own scroller, prose text breaks instead of pushing. */}
+            <div
+              className="prose prose-sm max-w-none break-words
+                         prose-headings:break-words
+                         prose-a:break-all
+                         prose-pre:overflow-x-auto prose-pre:max-w-full
+                         prose-img:h-auto prose-img:max-w-full
+                         prose-table:block prose-table:w-full prose-table:overflow-x-auto"
+              dangerouslySetInnerHTML={{ __html: html }}
+            />
           </div>
         ) : (
           <div className="card p-8 text-center text-sm text-[var(--ink-soft)]">

@@ -196,7 +196,7 @@ export function LoginPage() {
               </span>
               <div>
                 <h2 className="display text-2xl lg:text-3xl font-extrabold leading-tight">Welcome 👋</h2>
-                <p className="text-[12.5px] lg:text-[15px] text-[var(--ink-soft)] mt-0.5">
+                <p className="text-sm2 lg:text-[15px] text-[var(--ink-soft)] mt-0.5">
                   {step === 'otp'
                     ? `We sent a code to ${formatPhone(phone)}`
                     : step === 'details'
@@ -208,10 +208,18 @@ export function LoginPage() {
 
             {step === 'phone' && (
               <div>
-                <label className="text-sm font-bold">Mobile number</label>
-                <div className="flex items-center field field-lg mt-1.5 gap-2">
+                <label htmlFor="login-phone" className="text-sm font-bold">
+                  Mobile number
+                </label>
+                {/* The 56px of `.field-lg` was on this wrapper while the input
+                    inside shrank to its own 25px line-box — the box that looked
+                    tappable and the box that took the tap were different
+                    elements, and only the small one was real. `<label>` + a
+                    full-height input makes them the same thing. */}
+                <label htmlFor="login-phone" className="flex items-center field field-lg mt-1.5 gap-2 cursor-text">
                   <span className="font-extrabold text-[var(--ink-soft)]">+91</span>
                   <input
+                    id="login-phone"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
                     onKeyDown={(e) => e.key === 'Enter' && void requestOtp(false)}
@@ -220,9 +228,9 @@ export function LoginPage() {
                     inputMode="numeric"
                     autoComplete="tel"
                     placeholder="10-digit number"
-                    className="flex-1 outline-none bg-transparent"
+                    className="flex-1 h-full min-w-0 outline-none bg-transparent text-md2"
                   />
-                </div>
+                </label>
                 {error && <div className="text-xs text-[var(--coral)] mt-1.5">{error}</div>}
                 <button
                   onClick={() => void requestOtp(false)}
@@ -236,16 +244,25 @@ export function LoginPage() {
 
             {step === 'details' && (
               <div>
-                <label className="text-sm font-bold">Your name</label>
+                {/* Both labels were bare <label> over an id-less input: nothing
+                    tied them together, so the label was 17px of inert text
+                    rather than part of the field's target. */}
+                <label htmlFor="login-name" className="text-sm font-bold">
+                  Your name
+                </label>
                 <input
+                  id="login-name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Full name"
                   autoComplete="name"
                   className="field mt-1.5"
                 />
-                <label className="text-sm font-bold mt-4 block">Email</label>
+                <label htmlFor="login-email" className="text-sm font-bold mt-4 block">
+                  Email
+                </label>
                 <input
+                  id="login-email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && void requestOtp(true)}
@@ -262,7 +279,7 @@ export function LoginPage() {
                 >
                   {sending ? 'Sending…' : 'Send OTP'} <ArrowRight className="w-4 h-4" />
                 </button>
-                <button onClick={() => setStep('phone')} className="btn btn-ghost w-full mt-2 py-2.5 text-sm">
+                <button onClick={() => setStep('phone')} className="btn btn-ghost w-full mt-2 text-sm">
                   <ArrowLeft className="w-4 h-4" /> Back
                 </button>
               </div>
@@ -308,14 +325,14 @@ export function LoginPage() {
                       setOtp(Array(OTP_LENGTH).fill(''));
                       setError('');
                     }}
-                    className="btn btn-ghost flex-1 py-2.5 text-sm"
+                    className="btn btn-ghost flex-1 text-sm"
                   >
                     Change number
                   </button>
                   <button
                     onClick={() => void requestOtp(!!name.trim())}
                     disabled={sending}
-                    className="btn btn-ghost flex-1 py-2.5 text-sm"
+                    className="btn btn-ghost flex-1 text-sm"
                   >
                     {sending ? 'Sending…' : 'Resend OTP'}
                   </button>
@@ -323,7 +340,7 @@ export function LoginPage() {
               </div>
             )}
           </div>
-          <p className="text-center text-[11px] text-[var(--ink-soft)] mt-4">
+          <p className="text-center text-xs2 text-[var(--ink-soft)] mt-4">
             By continuing you agree to our Terms &amp; Privacy Policy.
           </p>
         </div>
