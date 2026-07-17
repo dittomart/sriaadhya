@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Set your location — SRI AADHYA FROZENS</title>
 <link rel="icon" type="image/png" href="assets/images/logo.png"/>
 <link rel="apple-touch-icon" sizes="180x180" href="assets/images/logo.png"/>
@@ -81,7 +81,7 @@
       <a href="login.html" class="font-bold text-[var(--green-700)]">Login / Sign up</a>
       <span class="text-[var(--ink-soft)]"> (optional)</span>
     </div>
-    <p class="text-center text-[11px] text-[var(--ink-soft)] mt-3 flex items-center justify-center gap-1"><i data-lucide="lock" class="w-3 h-3"></i> A serviceable location is required to browse — this is a hyperlocal store.</p>
+    <p class="text-center text-[11px] text-[var(--ink-soft)] mt-3 flex items-center justify-center gap-1"><i data-lucide="store" class="w-3 h-3"></i> Browse from anywhere — we deliver within 10 km of Avinashi.</p>
   </div>
 
 <script src="assets/js/data.js"></script>
@@ -117,41 +117,68 @@ document.getElementById('areaSearch').addEventListener('input', (e)=>{
 function pickArea(a){
   sg.classList.add('hidden');
   document.getElementById('areaSearch').value = a.area;
-  showCaptured(a.area, a.lat, a.lng, a.pincode);
+  showCaptured(a.area, a.lat, a.lng, a.pincode, null);
 }
 
+/* Real GPS only — no fake fallback, so the pin is always the user's actual position.
+   Every location is accepted here; the delivery-radius check happens at checkout. */
 function detectGPS(){
   const btn=document.getElementById('gpsBtn'), lab=document.getElementById('gpsLabel');
-  lab.textContent='Detecting…'; btn.disabled=true;
-  btn.querySelector('i').classList.add('animate-spin');
-  const finish = (lat,lng,name)=>{ btn.querySelector('i').classList.remove('animate-spin'); btn.disabled=false; lab.textContent='Use my current location'; showCaptured(name,lat,lng,'641654'); };
-  if(!navigator.geolocation){ setTimeout(()=>finish(STORE.lat+0.01,STORE.lng+0.01,'Avinashi (detected)'),900); return; }
+  const hint=document.getElementById('gpsHint');
+  const ico=btn.querySelector('svg') || btn.querySelector('i');
+  lab.textContent='Detecting…'; btn.disabled=true; if(ico)ico.classList.add('animate-spin');
+  let settled=false, wd;
+  const reset=()=>{ if(ico)ico.classList.remove('animate-spin'); btn.disabled=false; lab.textContent='Use my current location'; };
+  const fail=(msg)=>{
+    if(settled) return; settled=true; clearTimeout(wd); reset();
+    hint.innerHTML=`<span class="text-[var(--coral)]">${msg}</span>`;
+  };
+  const done=(lat,lng,accuracy)=>{
+    if(settled) return; settled=true; clearTimeout(wd); reset();
+    hint.textContent='We use this only to check delivery & navigate to you';
+    showCaptured('My current location',lat,lng,'',accuracy);
+  };
+  wd=setTimeout(()=>fail('Could not get your location — check GPS and try again'), 20000);
+  if(!navigator.geolocation || !window.isSecureContext){
+    fail('Location needs a secure page — open over http://localhost or https, not as a file');
+    return;
+  }
   navigator.geolocation.getCurrentPosition(
-    (pos)=>finish(pos.coords.latitude,pos.coords.longitude,'Detected location'),
-    ()=>{ // permission denied -> graceful fallback near store (demo)
-      document.getElementById('gpsHint').innerHTML='<span class="text-[var(--coral)]">Couldn\'t access GPS. Search your area below instead.</span>';
-      finish(STORE.lat+0.012,STORE.lng+0.009,'Near Avinashi (sample)');
-    }, {timeout:8000});
+    pos=>done(pos.coords.latitude,pos.coords.longitude,pos.coords.accuracy),
+    e=>fail(e.code===1 ? 'Location permission denied — allow location for this site in your browser settings'
+           :e.code===2 ? 'Location unavailable — turn on GPS / location services and try again'
+                       : 'Location timed out — try again, or search your area below'),
+    {enableHighAccuracy:true,timeout:18000,maximumAge:0});
 }
 
-function showCaptured(area,lat,lng,pincode){
+function showCaptured(area,lat,lng,pincode,accuracy){
   const dist = distanceKm(STORE.lat,STORE.lng,lat,lng);
   const serviceable = dist <= SRI.BRAND.radiusKm;
-  pending = {area, latitude:+lat.toFixed(5), longitude:+lng.toFixed(5), pincode, serviceable, distance_from_store_km:+dist.toFixed(1)};
+  pending = {area, latitude:+lat.toFixed(5), longitude:+lng.toFixed(5), pincode,
+             serviceable, distance_from_store_km:+dist.toFixed(1),
+             accuracy_m: accuracy?Math.round(accuracy):null};
   document.getElementById('captured').classList.remove('hidden');
   document.getElementById('capArea').textContent = area;
-  document.getElementById('capCoord').textContent = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
-  const d = document.getElementById('capDist'), btn=document.getElementById('confirmBtn');
-  if(serviceable){ d.innerHTML = `<span class="text-[var(--green-700)] flex items-center gap-1"><i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> We deliver here • ${dist.toFixed(1)} km away</span>`; btn.disabled=false; btn.classList.remove('opacity-50'); }
-  else{ d.innerHTML = `<span class="text-[var(--coral)] flex items-center gap-1"><i data-lucide="x-circle" class="w-3.5 h-3.5"></i> ${dist.toFixed(1)} km — outside our 10 km zone</span>`; btn.disabled=false; }
+  document.getElementById('capCoord').textContent =
+    `${lat.toFixed(5)}, ${lng.toFixed(5)}${accuracy?` • ±${Math.round(accuracy)} m`:''}`;
+  const d = document.getElementById('capDist');
+  // Every location is allowed through — this only sets the tone of the message.
+  if(serviceable){
+    d.innerHTML = `<span class="text-[var(--green-700)] flex items-center gap-1"><i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> We deliver here • ${dist.toFixed(1)} km away</span>`;
+  }else{
+    d.innerHTML = `<span class="text-amber-700 flex items-center gap-1"><i data-lucide="info" class="w-3.5 h-3.5"></i> ${dist.toFixed(1)} km away — outside our ${SRI.BRAND.radiusKm} km zone. You can browse; ordering isn't available here yet.</span>`;
+  }
+  if(accuracy && accuracy>1000){
+    d.innerHTML += `<span class="block mt-1 text-[11px] text-[var(--ink-soft)]">Approximate fix (±${(accuracy/1000).toFixed(1)} km) — not GPS. If this looks wrong, search your area below.</span>`;
+  }
   lucide.createIcons();
 }
 
+/* Any location continues to the store — no gate here. */
 function confirmLocation(){
   if(!pending) return;
   set(LS.loc, pending);
-  if(pending.serviceable) location.href='home.html';
-  else location.href='not-serviceable.html';
+  location.href='home.html';
 }
 </script>
 </body>

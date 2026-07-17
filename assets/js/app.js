@@ -51,13 +51,28 @@ function foodMark(type, size = "") {
 }
 
 /* =====================================================================
-   LOCATION GATE — run at top of every protected page
+   LOCATION GATE — run at top of every protected page.
+   Only requires that a location is set; out-of-zone users may browse freely.
    ===================================================================== */
 function locationGate() {
   const loc = get(LS.loc);
-  if (!loc || !loc.latitude || !loc.longitude) { location.href = "login.html"; return false; }
+  if (!loc || !loc.latitude || !loc.longitude) { location.href = "location.html"; return false; }
+  return true;
+}
+
+/* Ordering gate — run at the top of checkout pages only (cart → payment).
+   This is where the delivery-radius restriction is enforced. */
+function serviceableGate() {
+  if (!locationGate()) return false;
+  const loc = get(LS.loc);
   if (loc.serviceable === false) { location.href = "not-serviceable.html"; return false; }
   return true;
+}
+
+/* True when the current location can actually be delivered to. */
+function isServiceable() {
+  const loc = get(LS.loc);
+  return !!loc && loc.serviceable !== false;
 }
 
 /* ---------- distance (haversine, km) ---------- */

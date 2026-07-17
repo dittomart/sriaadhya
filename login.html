@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Welcome — SRI AADHYA FROZENS</title>
 <link rel="icon" type="image/png" href="assets/images/logo.png"/>
 <link rel="apple-touch-icon" sizes="180x180" href="assets/images/logo.png"/>
@@ -14,27 +14,31 @@
 <link rel="stylesheet" href="assets/css/styles.css"/>
 <script src="https://unpkg.com/lucide@latest"></script>
 <style>
-  /* ===== Lock the page: app-like fixed screen, NOTHING scrolls ===== */
-  html,body{height:100%;margin:0}
-  body{background:var(--cream);position:fixed;inset:0;overflow:hidden;
-       height:100vh;height:100dvh;display:flex;flex-direction:column}
-  @media(min-width:1024px){body{flex-direction:row}}
+  /* ===== Page scrolls normally on mobile; app-like fixed split on desktop ===== */
+  html,body{margin:0}
+  body{background:var(--cream);min-height:100vh;min-height:100dvh;
+       display:flex;flex-direction:column}
+  @media(min-width:1024px){
+    html,body{height:100%}
+    body{position:fixed;inset:0;overflow:hidden;height:100vh;height:100dvh;flex-direction:row}
+  }
 
   /* brand panel: compact + fixed height on mobile, fills on desktop */
   .brand-side{flex:0 0 auto;min-height:0}
   @media(min-width:1024px){.brand-side{flex:1 1 0;overflow:hidden}}
 
-  /* form column fills the remaining height; it does NOT scroll */
-  .form-side{flex:1 1 auto;min-height:0;overflow:hidden;display:flex}
-  /* desktop: equal 50/50 split — same flex-basis as the brand panel */
-  @media(min-width:1024px){.form-side{flex:1 1 0}}
+  /* form column: on desktop it's the one scroll container, so the login step
+     below the fold is always reachable */
+  .form-side{flex:1 1 auto;min-height:0;display:flex}
+  @media(min-width:1024px){
+    .form-side{flex:1 1 0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  }
 
-  /* card + its inner column stretch to fill, only the areas list can scroll */
   .form-wrap{width:100%;max-width:28rem;margin:0 auto;display:flex;flex-direction:column;
              min-height:0;flex:1 1 auto}
   @media(min-width:1024px){.form-wrap{margin:auto;flex:0 0 auto}}
   .auth-card{display:flex;flex-direction:column;min-height:0;flex:1 1 auto;overflow:hidden}
-  @media(min-width:1024px){.auth-card{flex:0 0 auto}}
+  @media(min-width:1024px){.auth-card{flex:0 0 auto;overflow:visible}}
   #seg1{display:flex;flex-direction:column;min-height:0;flex:1 1 auto}
   @media(min-width:1024px){#seg1{display:block;flex:0 0 auto}}
   .area-block{display:flex;flex-direction:column;min-height:0;flex:1 1 auto}
@@ -189,11 +193,11 @@
   /* OTP boxes a touch more vivid on focus */
   #otpInputs .field:focus{border-color:var(--green-600);box-shadow:0 0 0 3px var(--leaf-100)}
 
-  /* ===== mobile safety: never overlap — let the form column scroll if short ===== */
+  /* ===== mobile: the whole page scrolls, nothing is clipped ===== */
   @media(max-width:1023px){
-    .form-side{overflow-y:auto;-webkit-overflow-scrolling:touch}
-    .form-wrap,.auth-card,#seg1,.area-block{flex:0 0 auto}
-    #areaList{flex:none;max-height:none}
+    .form-side{overflow:visible;padding-bottom:2rem}
+    .form-wrap,.auth-card,#seg1,.area-block{flex:0 0 auto;overflow:visible}
+    #areaList{flex:none;max-height:none;overflow:visible}
   }
 </style>
 </head>
@@ -449,64 +453,93 @@ function pick(a){
   showCaptured(a.area,dist,ok);
 }
 
-/* current location — targets the rendered <svg> (lucide swaps <i>→<svg>) with a watchdog so it never hangs */
+/* current location — real GPS only; no fake fallback. Any coords are accepted here;
+   the delivery-radius restriction is enforced at checkout, not at login. */
 function detectGPS(){
   const b=document.getElementById('gpsBtn'), l=document.getElementById('gpsLabel');
   const ico=b.querySelector('svg') || b.querySelector('i');
   l.textContent='Detecting…'; b.disabled=true; if(ico)ico.classList.add('animate-spin');
   let settled=false, wd;
-  const done=(lat,lng,name)=>{
-    if(settled) return; settled=true; clearTimeout(wd);
-    if(ico)ico.classList.remove('animate-spin'); b.disabled=false; l.textContent='Use my current location';
-    const dist=distanceKm(STORE.lat,STORE.lng,lat,lng); const ok=dist<=SRI.BRAND.radiusKm;
-    pending={area:name,latitude:+lat.toFixed(5),longitude:+lng.toFixed(5),pincode:'641654',serviceable:ok,distance_from_store_km:+dist.toFixed(1)};
+  const reset=()=>{ if(ico)ico.classList.remove('animate-spin'); b.disabled=false; l.textContent='Use my current location'; };
+  const fail=(msg)=>{
+    if(settled) return; settled=true; clearTimeout(wd); reset();
+    toast(msg,'err','map-pin');
+  };
+  const done=(lat,lng,accuracy)=>{
+    if(settled) return; settled=true; clearTimeout(wd); reset();
+    const dist=distanceKm(STORE.lat,STORE.lng,lat,lng);
+    const ok=dist<=SRI.BRAND.radiusKm;
+    // Only borrow a known area's label/pincode when we're genuinely close to it.
+    const near=nearestArea(lat,lng);
+    const name=(near && near.d<=5) ? `My current location • near ${near.area}` : 'My current location';
+    pending={area:name,latitude:+lat.toFixed(5),longitude:+lng.toFixed(5),
+             pincode:(near && near.d<=5)?near.pincode:'',serviceable:ok,
+             distance_from_store_km:+dist.toFixed(1),accuracy_m:accuracy?Math.round(accuracy):null,
+             source:'gps'};
     renderAreas(); showCaptured(name,dist,ok);
   };
-  wd=setTimeout(()=>{ toast('Using nearest area — enable GPS for precise','','map-pin'); done(STORE.lat+0.011,STORE.lng+0.008,'Near Avinashi (approx)'); }, 9000);
-  if(!navigator.geolocation){ done(STORE.lat+0.011,STORE.lng+0.008,'Near Avinashi (approx)'); return; }
+  wd=setTimeout(()=>fail('Could not get your location — check GPS and try again'), 20000);
+  if(!navigator.geolocation || !window.isSecureContext){
+    fail('Location needs a secure page — open this site over http://localhost or https, not as a file');
+    return;
+  }
   navigator.geolocation.getCurrentPosition(
-    p=>done(p.coords.latitude,p.coords.longitude,'My current location'),
-    ()=>{ toast('GPS unavailable — using nearest area','err','x'); done(STORE.lat+0.012,STORE.lng+0.009,'Near Avinashi (approx)'); },
-    {enableHighAccuracy:true,timeout:8000,maximumAge:0});
+    p=>done(p.coords.latitude,p.coords.longitude,p.coords.accuracy),
+    e=>fail(e.code===1 ? 'Location permission denied — allow location for this site in your browser settings'
+           :e.code===2 ? 'Location unavailable — turn on GPS / location services and try again'
+                       : 'Location timed out — try again, or pick your area from the list'),
+    {enableHighAccuracy:true,timeout:18000,maximumAge:0});
+}
+
+function nearestArea(lat,lng){
+  return AREAS.map(a=>({...a,d:distanceKm(lat,lng,a.lat,a.lng)}))
+              .sort((x,y)=>x.d-y.d)[0] || null;
 }
 
 function showCaptured(area,dist,ok){
   const c=document.getElementById('captured'); c.classList.remove('hidden');
   document.getElementById('capArea').textContent=area;
   const d=document.getElementById('capDist');
-  if(ok){ c.className='mt-4 p-3.5 rounded-xl bg-[var(--leaf-100)] border border-[var(--green-500)]/40 rise'; d.innerHTML=`<span class="text-[var(--green-700)]">✅ We deliver here • ${dist.toFixed(1)} km away</span>`; }
-  else{ c.className='mt-4 p-3.5 rounded-xl bg-red-50 border border-[var(--coral)]/30 rise'; d.innerHTML=`<span class="text-[var(--coral)]">${dist.toFixed(1)} km — outside our 10 km zone</span>`; }
+  // Warn when the fix is too coarse to trust (Wi-Fi/IP lookup rather than real GPS).
+  const acc = pending && pending.accuracy_m;
+  const accNote = acc && acc>1000
+    ? `<span class="block mt-1 text-[11px] text-[var(--ink-soft)]">Approximate fix (±${(acc/1000).toFixed(1)} km) — not GPS. If this looks wrong, pick your area from the list.</span>` : '';
+  if(ok){ c.className='mt-4 p-3.5 rounded-xl bg-[var(--leaf-100)] border border-[var(--green-500)]/40 rise'; d.innerHTML=`<span class="text-[var(--green-700)]">✅ We deliver here • ${dist.toFixed(1)} km away</span>${accNote}`; }
+  else{ c.className='mt-4 p-3.5 rounded-xl bg-amber-50 border border-amber-300 rise'; d.innerHTML=`<span class="text-amber-700">${dist.toFixed(1)} km away — outside our ${SRI.BRAND.radiusKm} km delivery zone. You can still browse.</span>${accNote}`; }
   syncLogin(ok,area);
   lucide.createIcons();
-  document.getElementById('captured').scrollIntoView({behavior:'smooth',block:'nearest'});
+  // Location is set — bring the (now unlocked) login step into view.
+  document.getElementById('seg2').scrollIntoView({behavior:'smooth',block:'center'});
 }
 
 function syncLogin(ok,area){
   const hint=document.getElementById('locHint'), chip=document.getElementById('loginArea'),
         box=document.getElementById('authBox'), seg2=document.getElementById('seg2'),
         seg1=document.getElementById('seg1');
+  // A location is always enough to unlock login. `ok` only changes the messaging —
+  // the delivery-radius restriction is enforced at checkout, not here.
+  set(LS.loc,pending);
+  box.classList.remove('locked');
+  chip.classList.remove('hidden'); chip.classList.add('flex');
+  seg2.classList.add('on');
+  seg1.classList.remove('on'); seg1.classList.add('done');
   if(ok){
-    set(LS.loc,pending);
-    box.classList.remove('locked');
     hint.classList.add('hidden');
-    chip.classList.remove('hidden'); chip.classList.add('flex');
     chip.innerHTML=`<i data-lucide="map-pin" class="w-3.5 h-3.5"></i> Delivering to <b>${area}</b>`;
-    seg2.classList.add('on');
-    seg1.classList.remove('on'); seg1.classList.add('done');
   }else{
-    box.classList.add('locked');
-    hint.classList.remove('hidden'); hint.innerHTML='<i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i> This area is outside our 10 km delivery zone.';
-    chip.classList.add('hidden'); chip.classList.remove('flex');
-    seg2.classList.remove('on'); seg1.classList.add('on'); seg1.classList.remove('done');
+    hint.classList.remove('hidden');
+    hint.innerHTML=`<i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i> Outside our ${SRI.BRAND.radiusKm} km delivery zone — you can log in and browse, but ordering isn't available here yet.`;
+    chip.innerHTML=`<i data-lucide="map-pin" class="w-3.5 h-3.5"></i> Viewing from <b>${area}</b>`;
   }
 }
 
 document.getElementById('otpInputs').innerHTML = Array.from({length:6}).map((_,i)=>`<input id="o${i}" maxlength="1" inputmode="numeric" class="w-11 h-12 text-center text-xl font-extrabold field"/>`).join('');
 for(let i=0;i<6;i++){ const el=document.getElementById('o'+i); el.addEventListener('input',()=>{ if(el.value&&i<5)document.getElementById('o'+(i+1)).focus(); }); el.addEventListener('keydown',e=>{ if(e.key==='Backspace'&&!el.value&&i>0)document.getElementById('o'+(i-1)).focus(); }); }
 
+/* Login only needs *a* location — serviceability is checked at checkout. */
 function ensureLoc(){
-  if(!pending||!pending.serviceable){
-    toast('Please pick a serviceable location first','err','map-pin');
+  if(!pending){
+    toast('Please set your location first','err','map-pin');
     document.getElementById('seg1').scrollIntoView({behavior:'smooth',block:'start'});
     return false;
   }

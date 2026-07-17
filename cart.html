@@ -155,6 +155,11 @@ function applyCoupon(){
 
 function proceed(){
   if(!getCart().length){ toast('Cart is empty','err','x'); return; }
+  if(!isServiceable()){
+    toast(`Your location is outside our ${SRI.BRAND.radiusKm} km delivery zone`,'err','map-pin');
+    setTimeout(()=>location.href='not-serviceable.html',900);
+    return;
+  }
   set('dittomart_checkout', calc());
   if(isLoggedIn()) location.href='address.html';
   else location.href='login.html?next=address.html';
