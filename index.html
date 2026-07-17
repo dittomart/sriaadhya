@@ -1,174 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no"/>
-<title>SRI AADHYA FROZENS — Freshness Frozen, Goodness Preserved</title>
-<link rel="icon" type="image/png" href="assets/images/logo.png"/>
-<link rel="apple-touch-icon" sizes="180x180" href="assets/images/logo.png"/>
-<link rel="shortcut icon" type="image/x-icon" href="assets/images/logo.png"/>
-<script src="https://cdn.tailwindcss.com"></script>
-<script>tailwind.config={theme:{extend:{screens:{xs:'420px'},colors:{brand:{dark:'#1E6B34',green:'#4CAF50',light:'#A5D76E',gold:'#FFD243'}}}}}</script>
-<link rel="stylesheet" href="assets/css/styles.css"/>
-<script src="https://unpkg.com/lucide@latest"></script>
-<style>
-  html,body{height:100%}
-  body{margin:0;background:linear-gradient(180deg,#FFFFFF 0%,#F2F8EC 100%);overflow-x:hidden;overflow-y:auto}
-  .hero{min-height:100vh;min-height:100dvh;display:grid;grid-template-columns:1fr;place-items:center}
-
-  /* drifting leaves */
-  .leaf{position:absolute;color:var(--brand-green);opacity:.18;pointer-events:none}
-  .leaf.l3{bottom:14%;left:10%;width:46px;height:46px;color:var(--brand-light);opacity:.45}
-  .leaf.l4{bottom:24%;right:12%;width:34px;height:34px;opacity:.25}
-
-  /* live realistic leaf */
-  @keyframes leafBreeze{0%,100%{transform:rotate(-4deg) translateY(0)}25%{transform:rotate(3deg) translateY(-5px)}
-    50%{transform:rotate(-1deg) translateY(-2px)}75%{transform:rotate(4deg) translateY(-6px)}}
-  .leaf-defs{position:absolute;width:0;height:0;overflow:hidden}
-  .live-leaf{position:absolute;pointer-events:none;line-height:0;z-index:0}
-  .live-leaf svg{width:100%;height:auto;display:block;transform-origin:50% 100%;
-    filter:drop-shadow(0 14px 24px rgba(30,107,52,.32));animation:leafBreeze 6s ease-in-out infinite}
-  .live-leaf.lf-tl{width:172px;top:4%;left:3%;transform:rotate(-8deg)}
-  .live-leaf.lf-br{width:120px;bottom:8%;right:5%;opacity:.92;transform:rotate(8deg) scaleX(-1)}
-  .live-leaf.lf-br svg{animation-delay:1.6s;animation-duration:7s}
-  .logo-lockup,.tagline,.feats,.hero .cta,.hero p{position:relative;z-index:2}
-
-  /* CSS wordmark logo */
-  .logo-lockup{display:flex;flex-direction:column;align-items:center}
-  .logo-mark{position:relative;width:66px;height:66px;border-radius:19px;display:grid;place-items:center;
-    background:linear-gradient(135deg,var(--brand-light),var(--brand-green));color:#fff;
-    box-shadow:0 14px 28px rgba(30,107,52,.32);margin-bottom:.7rem}
-  .logo-mark i{width:36px;height:36px}
-  .logo-mark .snow{position:absolute;width:24px;height:24px;right:-7px;top:-7px;padding:4px;border-radius:50%;
-    background:var(--brand-gold);color:var(--brand-dark);box-shadow:0 4px 10px rgba(0,0,0,.12)}
-  .logo-sri{font-weight:800;letter-spacing:.34em;color:var(--brand-dark);font-size:1rem;line-height:1;padding-left:.36em}
-  .logo-name{font-weight:800;font-size:3rem;line-height:1;color:var(--brand-dark);letter-spacing:-.01em;margin-top:.1rem}
-  @media(min-width:1024px){.logo-name{font-size:3.6rem}}
-  .logo-rule{display:flex;align-items:center;gap:.55rem;margin-top:.5rem;font-weight:700;letter-spacing:.4em;
-    color:var(--brand-green);font-size:.95rem;padding-left:.4em}
-  .logo-rule span{height:2px;width:30px;background:var(--brand-green);border-radius:2px;display:block}
-
-  /* tagline pill */
-  .tagline{display:inline-flex;align-items:center;gap:.5rem;font-size:.66rem;font-weight:700;letter-spacing:.12em;
-    text-transform:uppercase;color:var(--brand-dark);background:#EAF6DE;border:1px solid #CDE8B6;
-    padding:.5rem 1.1rem;border-radius:18px;max-width:100%;text-align:center;line-height:1.4}
-  .tagline i{flex:none}
-  @media(min-width:1024px){.tagline{font-size:.72rem;letter-spacing:.2em;border-radius:999px}}
-
-  /* feature badges */
-  .feats{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center}
-  .feat{display:flex;flex-direction:column;align-items:center;gap:.45rem;width:80px}
-  .feat-ico{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;color:#fff;
-    background:linear-gradient(135deg,var(--brand-green),var(--brand-dark));
-    box-shadow:0 10px 20px rgba(30,107,52,.28)}
-  .feat-ico i{width:24px;height:24px}
-  .feat-lbl{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em;
-    color:var(--brand-dark);text-align:center;line-height:1.25}
-
-  /* CTA */
-  .cta{display:inline-flex;align-items:center;gap:.55rem;font-weight:700;font-size:1.02rem;color:#fff;
-    background:linear-gradient(135deg,var(--brand-green),var(--brand-dark));padding:.95rem 2rem;border-radius:14px;
-    box-shadow:0 14px 30px rgba(30,107,52,.34);transition:transform .2s,box-shadow .2s}
-  .cta:hover{transform:translateY(-2px);box-shadow:0 18px 38px rgba(30,107,52,.42)}
-
-  /* ===== responsive overrides (placed last so they win the cascade) ===== */
-  @media(max-width:1023px){
-    .live-leaf.lf-tl{width:84px;top:2%;left:1%;opacity:.85}
-    .live-leaf.lf-br{width:66px;bottom:3%;right:2%;opacity:.8}
-    .logo-name{font-size:2.5rem}
-    .feats{gap:.45rem;flex-wrap:nowrap}
-    .feat{width:70px}
-    .feat-ico{width:46px;height:46px}
-    .feat-ico i{width:20px;height:20px}
-    .feat-lbl{font-size:.56rem}
-    .cta{margin-top:1.4rem}
-  }
-  @media(max-width:380px){
-    .live-leaf.lf-tl,.live-leaf.lf-br{display:none}
-    .logo-name{font-size:2.05rem}
-    .feats{gap:.3rem}
-    .feat{width:60px}
-    .feat-ico{width:42px;height:42px}
-    .feat-lbl{font-size:.5rem}
-  }
-</style>
-</head>
-<body>
-  <div class="hero">
-
-    <!-- ============ LEFT · BRAND ============ -->
-    <section class="relative flex flex-col items-center justify-center text-center px-7 py-10 lg:px-16">
-      <!-- reusable realistic leaf -->
-      <svg class="leaf-defs" aria-hidden="true">
-        <defs>
-          <linearGradient id="lfBody" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stop-color="#C4EA8A"/><stop offset=".45" stop-color="#4CAF50"/><stop offset="1" stop-color="#1E6B34"/>
-          </linearGradient>
-          <radialGradient id="lfDew" cx=".35" cy=".3" r=".75">
-            <stop offset="0" stop-color="#ffffff" stop-opacity=".95"/><stop offset=".45" stop-color="#eaffea" stop-opacity=".45"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
-          </radialGradient>
-          <symbol id="liveLeaf" viewBox="0 0 130 150">
-            <path d="M65 150 C64 134 64 128 64 122" stroke="#2f7a3d" stroke-width="3.6" fill="none" stroke-linecap="round"/>
-            <path d="M65 122 C18 100 8 54 65 6 C122 54 112 100 65 122 Z" fill="url(#lfBody)" stroke="#2f8f43" stroke-width="1" stroke-opacity=".4"/>
-            <path d="M60 16 C40 34 30 62 42 94 C32 62 41 35 60 16 Z" fill="#ffffff" opacity=".16"/>
-            <g stroke="#1c5e2e" stroke-width="1.6" stroke-opacity=".5" fill="none" stroke-linecap="round">
-              <path d="M65 118 C64 80 66 40 65 12"/>
-              <path d="M64 96 C46 93 33 87 23 75"/><path d="M65 96 C84 93 97 87 107 75"/>
-              <path d="M64 73 C49 71 39 65 29 53"/><path d="M65 73 C81 71 91 65 101 53"/>
-              <path d="M64 51 C53 49 46 43 39 35"/><path d="M65 51 C77 49 84 43 91 35"/>
-            </g>
-            <circle cx="46" cy="58" r="6.5" fill="url(#lfDew)"><animate attributeName="opacity" values=".55;1;.55" dur="3.2s" repeatCount="indefinite"/></circle>
-            <circle cx="80" cy="82" r="4.5" fill="url(#lfDew)"><animate attributeName="opacity" values="1;.5;1" dur="3.8s" repeatCount="indefinite"/></circle>
-            <circle cx="57" cy="36" r="3.6" fill="url(#lfDew)"><animate attributeName="opacity" values=".6;1;.6" dur="2.8s" repeatCount="indefinite"/></circle>
-          </symbol>
-        </defs>
-      </svg>
-
-      <!-- live realistic leaves -->
-      <span class="live-leaf lf-tl"><svg viewBox="0 0 130 150" aria-hidden="true"><use href="#liveLeaf"/></svg></span>
-      <span class="live-leaf lf-br"><svg viewBox="0 0 130 150" aria-hidden="true"><use href="#liveLeaf"/></svg></span>
-
-      <!-- faint ambient accents -->
-      <i data-lucide="leaf" class="leaf l3 leaf-float" style="animation-delay:1.4s"></i>
-      <i data-lucide="leaf" class="leaf l4 leaf-float" style="animation-delay:2s"></i>
-
-      <!-- brand wordmark -->
-      <div class="logo-lockup" style="animation:bounceIn .9s ease">
-        <div class="logo-mark">
-          <i data-lucide="sprout"></i>
-          <i data-lucide="snowflake" class="snow"></i>
-        </div>
-        <div class="logo-sri">SRI</div>
-        <div class="logo-name">AADHYA</div>
-        <div class="logo-rule"><span></span>FROZENS<span></span></div>
-      </div>
-
-      <!-- tagline -->
-      <div class="tagline mt-7" style="animation:fadeUp .7s .25s both">
-        <i data-lucide="snowflake" class="w-3.5 h-3.5"></i> Freshness Frozen, Goodness Preserved
-      </div>
-
-      <!-- feature badges -->
-      <div class="feats mt-9" style="animation:fadeUp .7s .4s both">
-        <div class="feat"><span class="feat-ico"><i data-lucide="leaf"></i></span><span class="feat-lbl">100%<br>Natural</span></div>
-        <div class="feat"><span class="feat-ico"><i data-lucide="snowflake"></i></span><span class="feat-lbl">Frozen<br>Fresh</span></div>
-        <div class="feat"><span class="feat-ico"><i data-lucide="shield-check"></i></span><span class="feat-lbl">Premium<br>Quality</span></div>
-        <div class="feat"><span class="feat-ico"><i data-lucide="heart-handshake"></i></span><span class="feat-lbl">Made for<br>Families</span></div>
-      </div>
-
-      <!-- CTA -->
-      <a href="location.html" class="cta mt-10" style="animation:fadeUp .7s .55s both">
-        Get Started <i data-lucide="arrow-right" class="w-5 h-5"></i>
-      </a>
-      <p class="text-[12px] text-[var(--ink-soft)] mt-4" style="animation:fadeIn 1s .7s both">100% Natural • Hygienically Packed • Avinashi, Tirupur</p>
-    </section>
-
-  </div>
-
-<script src="assets/js/data.js"></script>
-<script src="assets/js/app.js"></script>
-<script>
-  lucide.createIcons();
-</script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SRI AADHYA FROZENS — Freshness Frozen, Goodness Preserved</title>
+    <link rel="icon" type="image/png" href="/images/logo.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/images/logo.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
