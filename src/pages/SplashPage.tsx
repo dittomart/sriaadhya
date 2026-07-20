@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, HeartHandshake, Leaf, ShieldCheck, Snowflake, Sprout } from 'lucide-react';
+import { ArrowRight, HeartHandshake, Leaf, ShieldCheck, Snowflake } from 'lucide-react';
 import { LeafDefsSplash, LiveLeavesSplash } from '@/shared/LiveLeaf';
 
 /* Ports index.html. The Get Started CTA links to /location, exactly as the
@@ -16,19 +16,16 @@ export function SplashPage() {
         <Leaf className="leaf l3 leaf-float" style={{ animationDelay: '1.4s' }} />
         <Leaf className="leaf l4 leaf-float" style={{ animationDelay: '2s' }} />
 
-        {/* brand wordmark */}
+        {/* brand wordmark — same image logo used across the app (home header) */}
         <div className="logo-lockup" style={{ animation: 'bounceIn .9s ease' }}>
-          <div className="logo-mark">
-            <Sprout />
-            <Snowflake className="snow" />
-          </div>
-          <div className="logo-sri">SRI</div>
-          <div className="logo-name">AADHYA</div>
-          <div className="logo-rule">
-            <span />
-            FROZENS
-            <span />
-          </div>
+          {/* Same brand wordmark as the app header, but the transparent-PNG cut
+              of it — the API/JPEG copy carries a white box that would sit oddly
+              on the cream splash gradient. */}
+          <img
+            src="/images/logo-full-transparent.png"
+            alt="SRI AADHYA FROZENS"
+            className="w-full max-w-[340px] sm:max-w-[420px] h-auto object-contain"
+          />
         </div>
 
         {/* tagline */}

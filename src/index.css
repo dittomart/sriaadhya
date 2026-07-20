@@ -481,6 +481,10 @@ input,select,textarea{font-family:inherit}
 .live-leaf.lf-tl{width:172px;top:4%;left:3%;transform:rotate(-8deg)}
 .live-leaf.lf-br{width:120px;bottom:8%;right:5%;opacity:.92;transform:rotate(8deg) scaleX(-1)}
 .live-leaf.lf-br svg{animation-delay:1.6s;animation-duration:7s}
+/* Splash logo is now a transparent-cut image (no white box), so the top-left
+   leaf can't hide behind it. Shrink it and lift it into the corner above the
+   wordmark so it frames the logo instead of sitting over the letters. */
+.splash-page .live-leaf.lf-tl{width:120px;top:-7%;left:6%}
 .logo-lockup,.tagline,.feats,.splash-page .cta,.splash-page p{position:relative;z-index:2}
 
 /* CSS wordmark logo */
